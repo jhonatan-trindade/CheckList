@@ -348,7 +348,7 @@
     <h3>Ocorrências</h3>
     <div id="ocorrList"></div>
     <button id="addOcorr" class="primary">+ Ocorrência</button>
-    <p class="hint">A linha sai como: <b>Local - Status - COB - REDS - descrição</b>. Campos vazios são omitidos.</p>
+    <p class="hint">Preencha os campos — a frase sai montada no padrão: <b>Local - Status - COB - RI - Natureza…, Coordenadas…, REDS…, Atuação de…</b>. Campos vazios são omitidos.</p>
   </div>
 
   <div class="card">
@@ -696,6 +696,17 @@ const ACOES_PADRAO = [
 
 const STATUS = ["Em andamento","Em monitoramento","Debelado","Rescaldo","Aguardando verificação"];
 
+/* opções para o preenchimento guiado das ocorrências */
+const NATUREZA = [
+  "Incêndio",
+  "Incêndio na zona de amortecimento da UC",
+  "Incêndio no entorno da UC",
+  "Incêndio no interior da UC",
+  "Focos de calor detectados"
+];
+const VERBO   = ["detectado","iniciado","combate iniciado","reacendido"];
+const TIPO_ID = ["REDS","Nº Chamada"];
+
 const POSTOS = [
   "Cel BM","Ten Cel BM","Maj BM","Cap BM","1º Ten BM","2º Ten BM","Asp Of BM",
   "Subten BM","1º Sgt BM","2º Sgt BM","3º Sgt BM","Cb BM","Sd BM"
@@ -734,6 +745,19 @@ async function loadRel(){
       ACOES_PADRAO.forEach(a => { if(!rel.acoes.some(x=>x.t===a)) rel.acoes.push({t:a,on:false}); });
     }
   }catch(e){}
+  /* normaliza as ocorrências para o formato guiado (mantém dados antigos) */
+  rel.ocorr = (rel.ocorr||[]).map(o => {
+    const base = {
+      local:"", status:"Em andamento", cob:"", ri:"",
+      natureza:"", compl:"", municipio:"",
+      verbo:"detectado", hoje:false, data:"", hora:"",
+      coord:"", tipoId:"REDS", num:"", atuacao:"", obs:""
+    };
+    const m = Object.assign(base, o);
+    if(o && o.desc && !m.obs) m.obs = o.desc;   /* migra a descrição livre antiga */
+    delete m.desc;
+    return m;
+  });
   if(!rel.data)  rel.data  = new Date().toISOString().slice(0,10);
   if(!rel.anexo) rel.anexo = "Boletim Diário do dia " + fmtData(rel.data);
   renderRel();
@@ -741,6 +765,10 @@ async function loadRel(){
 
 function buildSelectOpts(arr, val, placeholder){
   return `<option value="">${placeholder||"—"}</option>` + arr.map(p=>`<option ${val===p?"selected":""}>${esc(p)}</option>`).join("");
+}
+/* opções de select sem item em branco (sempre com um valor) */
+function selOpts(arr, val){
+  return arr.map(p=>`<option ${val===p?"selected":""}>${esc(p)}</option>`).join("");
 }
 
 function renderRel(){
@@ -821,18 +849,64 @@ function renderRel(){
          <div><label class="f">COB</label>
            <input type="text" data-oc="cob" value="${esc(o.cob)}" placeholder="4º COB">
          </div>
-         <div><label class="f">REDS</label>
-           <input type="text" data-oc="ri" value="${esc(o.ri)}" placeholder="2026-037604303-001">
+         <div><label class="f">RI (cabeçalho)</label>
+           <input type="text" data-oc="ri" value="${esc(o.ri)}" placeholder="166">
+         </div>
+       </div>
+       <div class="grid g2" style="margin-top:12px">
+         <div><label class="f">Natureza</label>
+           <select data-oc="natureza">${buildSelectOpts(NATUREZA, o.natureza, "—")}</select>
+         </div>
+         <div><label class="f">Complemento do local</label>
+           <input type="text" data-oc="compl" value="${esc(o.compl)}" placeholder="comunidade Macuco / porção sul do parque">
+         </div>
+       </div>
+       <div class="grid g3" style="margin-top:12px">
+         <div><label class="f">Verbo</label>
+           <select data-oc="verbo">${selOpts(VERBO, o.verbo)}</select>
+         </div>
+         <div><label class="f">Data</label>
+           <input type="date" data-oc="data" value="${esc(o.data)}">
+         </div>
+         <div><label class="f">Horário</label>
+           <input type="text" data-oc="hora" value="${esc(o.hora)}" placeholder="14h52min">
+         </div>
+       </div>
+       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-dim);margin-top:10px;cursor:pointer">
+         <input type="checkbox" data-oc="hoje" ${o.hoje?"checked":""} style="width:18px;height:18px"> usar “hoje” antes da data
+       </label>
+       <div class="grid g2" style="margin-top:12px">
+         <div><label class="f">Município</label>
+           <input type="text" data-oc="municipio" value="${esc(o.municipio)}" placeholder="Joaquim Felício">
+         </div>
+         <div><label class="f">Coordenadas</label>
+           <input type="text" data-oc="coord" value="${esc(o.coord)}" placeholder="17°49'14,9&quot;S 44°15'57,1&quot;W">
+         </div>
+       </div>
+       <div class="grid g2" style="margin-top:12px">
+         <div><label class="f">Identificador</label>
+           <select data-oc="tipoId">${selOpts(TIPO_ID, o.tipoId)}</select>
+         </div>
+         <div><label class="f">Número</label>
+           <input type="text" data-oc="num" value="${esc(o.num)}" placeholder="2026-037604303-001">
          </div>
        </div>
        <div style="margin-top:12px">
-         <label class="f">Descrição (município, horário, coordenadas, REDS, quem atuou)</label>
-         <textarea data-oc="desc" placeholder="Incêndio iniciado às 10h55min do dia 14/08...">${esc(o.desc)}</textarea>
+         <label class="f">Atuação de…</label>
+         <input type="text" data-oc="atuacao" value="${esc(o.atuacao)}" placeholder="BM's, brigadistas e funcionários da UC">
+       </div>
+       <div style="margin-top:12px">
+         <label class="f">Observação livre (para o que fugir do padrão)</label>
+         <textarea data-oc="obs" placeholder="Ex.: Será enviada equipe para checar amanhã pela manhã.">${esc(o.obs)}</textarea>
        </div>`;
     d.querySelector("[data-del]").onclick = () => { rel.ocorr.splice(i,1); saveRel(); renderRel(); };
     d.querySelectorAll("[data-oc]").forEach(inp => {
-      const ev = inp.tagName==="SELECT" ? "onchange" : "oninput";
-      inp[ev] = e => { rel.ocorr[i][e.target.dataset.oc] = e.target.value; saveRel(); desenhaPreview(); };
+      const ev = (inp.tagName==="SELECT"||inp.type==="checkbox") ? "onchange" : "oninput";
+      inp[ev] = e => {
+        const t = e.target;
+        rel.ocorr[i][t.dataset.oc] = (t.type==="checkbox") ? t.checked : t.value;
+        saveRel(); desenhaPreview();
+      };
     });
     oc.appendChild(d);
   });
@@ -896,7 +970,15 @@ $("#sFuncao").oninput = e => { rel.sig.funcao = e.target.value; saveRel(); desen
 
 /* ---- botões ---- */
 $("#addEfetivo").onclick = () => { rel.efetivo.push({n:"",p:"",nome:""}); saveRel(); renderRel(); };
-$("#addOcorr").onclick   = () => { rel.ocorr.push({local:"",status:"Em andamento",cob:"",ri:"",desc:""}); saveRel(); renderRel(); };
+$("#addOcorr").onclick   = () => {
+  rel.ocorr.push({
+    local:"", status:"Em andamento", cob:"", ri:"",
+    natureza:"Incêndio", compl:"", municipio:"",
+    verbo:"detectado", hoje:true, data: rel.data || "", hora:"",
+    coord:"", tipoId:"REDS", num:"", atuacao:"", obs:""
+  });
+  saveRel(); renderRel();
+};
 $("#addObs").onclick     = () => { rel.obs.push(""); saveRel(); renderRel(); };
 $("#addAcao").onclick    = () => {
   const v = $("#acaoNova").value.trim();
@@ -916,15 +998,41 @@ const P_CTR = 'style="text-align:center; margin-top:8px; margin-right:8px; margi
 const P_JUS = 'style="text-align:justify; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
 const P_ESQ = 'style="text-align:left; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
 
-function linhaOcorr(o){
-  const arr = [];
-  if(lim(o.local))  arr.push(esc(lim(o.local)));
-  if(o.status)      arr.push(`<strong>${esc(o.status)}</strong>`);
-  if(lim(o.cob))    arr.push(esc(lim(o.cob)));
-  if(lim(o.ri))     arr.push("REDS " + esc(lim(o.ri)));
-  let s = arr.join(" - ");
-  if(lim(o.desc))   s += " - " + esc(lim(o.desc));
+function ddmm(iso){ if(!iso) return ""; const [a,m,d] = iso.split("-"); return d + "/" + m; }
+function cap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function deteccaoTxt(o){
+  if(!lim(o.hora) && !o.data) return "";
+  let s = o.verbo || "detectado";
+  if(o.data)      s += (o.hoje ? " hoje " : " em ") + ddmm(o.data);
+  if(lim(o.hora)) s += " às " + lim(o.hora);
   return s;
+}
+function linhaOcorr(o){
+  /* cabeçalho: Local - Status - COB - RI */
+  const head = [];
+  if(lim(o.local))  head.push(esc(lim(o.local)));
+  if(o.status)      head.push(`<strong>${esc(o.status)}</strong>`);
+  if(lim(o.cob))    head.push(esc(lim(o.cob)));
+  if(lim(o.ri))     head.push("RI " + esc(lim(o.ri)));
+
+  /* frase de abertura: natureza + complemento + município + detecção */
+  let nar = lim(o.natureza);
+  if(lim(o.compl))     nar += (nar ? ", " : "") + lim(o.compl);
+  if(lim(o.municipio)) nar += (nar ? ", " : "") + "município de " + lim(o.municipio);
+  const det = deteccaoTxt(o);
+  if(det)              nar += (nar ? ", " : "") + det;
+
+  /* demais frases, sempre na mesma ordem */
+  const sents = [];
+  if(nar)            sents.push(cap(nar));
+  if(lim(o.coord))   sents.push("Coordenadas: " + lim(o.coord));
+  if(lim(o.num))     sents.push((o.tipoId || "REDS") + ": " + lim(o.num));
+  if(lim(o.atuacao)) sents.push("Atuação de " + lim(o.atuacao));
+  if(lim(o.obs))     sents.push(lim(o.obs));
+
+  let corpo = sents.map(s => esc(s).replace(/\s*\.\s*$/,"")).join(". ");
+  if(corpo) corpo += ".";
+  return head.join(" - ") + (corpo ? " - " + corpo : "");
 }
 
 function montarHTML(){
@@ -944,7 +1052,7 @@ function montarHTML(){
     });
   }
 
-  const ocs = rel.ocorr.filter(o => lim(o.local)||lim(o.desc));
+  const ocs = rel.ocorr.filter(o => lim(o.local)||lim(o.num)||lim(o.obs)||lim(o.coord));
   if(ocs.length){
     L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>OCORRÊNCIAS</strong></p>`);
     ocs.forEach(o => L.push(`<p class="Item_Nivel2" ${P_JUS}>${linhaOcorr(o)}</p>`));
