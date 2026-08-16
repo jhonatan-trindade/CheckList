@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plantão — Sala de Coordenação Operacional CEB</title>
+<style>
+  :root{
+    --bg:#0E1216; --bg-2:#151B21; --panel:#1A222A; --line:#27313B;
+    --ink:#E8EDF2; --ink-dim:#8B9AA8; --ember:#FF7A18; --ember-soft:#FFA357;
+    --alert:#FFC93C; --ok:#3FBF8F; --smoke:#5A6B7A;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1100px 500px at 12% -10%, rgba(255,122,24,.10), transparent 60%),var(--bg);
+    color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 90px}
+
+  header{border-bottom:1px solid var(--line);padding-bottom:20px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);font-weight:700;margin:0 0 6px}
+  h1{margin:0;font-size:30px;line-height:1.12;font-weight:700;letter-spacing:-.02em}
+  h1 span{display:block;color:var(--ink-dim);font-size:15px;font-weight:400;letter-spacing:0;margin-top:6px}
+  .meter{margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .bar{flex:1;min-width:200px;height:10px;border-radius:99px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden}
+  .bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--ember),var(--alert));transition:width .35s ease}
+  .bar.full i{background:linear-gradient(90deg,var(--ok),#7FE3C0)}
+  .meter b{font-size:13px;color:var(--ink-dim);font-weight:600;letter-spacing:.04em}
+  .meter b em{font-style:normal;color:var(--ink);font-size:17px}
+
+  /* ---- horários referência ---- */
+  .prazos{margin:20px 0 0}
+  .prazos-title{
+    display:flex;align-items:center;gap:8px;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);font-weight:700;margin:0 0 8px
+  }
+  .prazos-title::after{content:"";flex:1;height:1px;background:var(--line)}
+  .prazos-groups{display:flex;gap:10px;flex-wrap:wrap}
+  .prazos-group{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+    display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1
+  }
+  .prazos-group-title{
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);font-weight:700;margin-bottom:2px
+  }
+  .prazos-group-title.alim{color:var(--ok)}
+  .prazos-group-title.aer{color:var(--ember-soft)}
+  .prazos-group-title.reg{color:#7EB8F7}
+  .prazo-row{display:flex;align-items:baseline;gap:8px;font-size:13px}
+  .prazo-row b{color:var(--alert);font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;min-width:44px}
+  .prazo-row span{color:var(--ink-dim)}
+
+  .tabs{display:flex;gap:6px;margin:22px 0 0;border-bottom:1px solid var(--line)}
+  .tabs button{
+    background:none;border:none;border-bottom:2px solid transparent;border-radius:0;
+    padding:11px 4px;margin-right:18px;text-transform:none;letter-spacing:0;font-size:15px;font-weight:600;color:var(--smoke)
+  }
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--ember);background:none}
+  .tabs button:hover{color:var(--ink)}
+
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:16px 0 22px;border-bottom:1px solid var(--line);margin-bottom:26px}
+  button{font:inherit;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);
+    background:var(--bg-2);border:1px solid var(--line);padding:8px 13px;border-radius:6px;cursor:pointer;transition:.15s}
+  button:hover{color:var(--ink);border-color:var(--smoke)}
+  button.on{color:var(--bg);background:var(--ember-soft);border-color:var(--ember-soft)}
+  button.primary{color:var(--bg);background:var(--ember);border-color:var(--ember)}
+  button.primary:hover{color:var(--bg);background:var(--ember-soft);border-color:var(--ember-soft)}
+  button.sm{padding:4px 9px;font-size:11px;letter-spacing:.04em}
+  button.danger:hover{color:#FF9A9A;border-color:#7A3B3B}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+  .tools .spacer{flex:1}
+
+  .block{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .block.done{border-color:rgba(63,191,143,.35)}
+  .head{display:flex;align-items:center;gap:14px;padding:15px 18px;cursor:pointer;user-select:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.025),transparent)}
+  .head:hover{background:rgba(255,255,255,.04)}
+  .seq{flex:none;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--bg-2);
+    border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--ember)}
+  .block.done .seq{color:var(--ok);border-color:rgba(63,191,143,.4)}
+  .head h2{margin:0;font-size:16px;font-weight:600;flex:1;letter-spacing:-.01em}
+  .head h2 small{display:block;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);margin-top:3px}
+  .count{font-size:12px;color:var(--ink-dim);font-variant-numeric:tabular-nums;letter-spacing:.05em}
+  .chev{color:var(--smoke);transition:transform .2s;font-size:12px}
+  .block.collapsed .chev{transform:rotate(-90deg)}
+  .block.collapsed .items,.block.collapsed .note{display:none}
+
+  .items{list-style:none;margin:0;padding:0 18px 12px}
+  .items li{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line)}
+  .items li.hidden{display:none}
+  li.grp-bar{border-top:none;gap:8px;padding:4px 0 2px}
+  li.grp-bar button{padding:4px 10px;font-size:11px;letter-spacing:.04em}
+  input[type=checkbox]{appearance:none;flex:none;width:20px;height:20px;margin:1px 0 0;border:1.5px solid var(--smoke);
+    border-radius:5px;background:var(--bg-2);cursor:pointer;display:grid;place-items:center;transition:.15s}
+  input[type=checkbox]:hover{border-color:var(--ember)}
+  input[type=checkbox]:checked{background:var(--ok);border-color:var(--ok)}
+  input[type=checkbox]:checked::after{content:"";width:5px;height:10px;border:solid var(--bg);border-width:0 2.5px 2.5px 0;transform:rotate(42deg) translate(-1px,-1px)}
+  .txt{flex:1;cursor:pointer}
+  .txt strong{font-weight:500;display:block}
+  li.checked .txt strong{color:var(--smoke);text-decoration:line-through;text-decoration-color:var(--line)}
+  .txt p{margin:4px 0 0;font-size:13px;color:var(--ink-dim);line-height:1.45}
+  .txt a{color:var(--ember-soft);text-decoration:none;border-bottom:1px dotted rgba(255,163,87,.5);word-break:break-word}
+  .txt a:hover{color:var(--alert)}
+  .txt code{background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px;color:var(--alert)}
+  .tag{flex:none;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:99px;
+    border:1px solid var(--line);color:var(--smoke);background:var(--bg-2);margin-top:2px;white-space:nowrap}
+  .tag.continuo{color:var(--ember-soft);border-color:rgba(255,163,87,.3)}
+  .tag.critico{color:var(--alert);border-color:rgba(255,201,60,.35)}
+  .stamp{font-size:11px;color:var(--ok);font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap}
+
+  .note{margin:0 18px 16px;padding:11px 14px;border-left:2px solid var(--ember);background:var(--bg-2);
+    border-radius:0 6px 6px 0;font-size:13px;color:var(--ink-dim)}
+  .note b{color:var(--ink)}
+
+  .fixed{margin-top:26px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:18px}
+  .fixed h3{margin:0 0 12px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+  .fixed ul{margin:0;padding-left:18px;font-size:13px;color:var(--ink-dim);line-height:1.7}
+  .fixed ul b{color:var(--ink)}
+
+  /* ---- relatório ---- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px}
+  .card > h3{margin:0 0 14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+  label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin:0 0 5px;font-weight:600}
+  input[type=text],input[type=date],select,textarea{
+    width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--bg-2);
+    border:1px solid var(--line);border-radius:6px;padding:9px 11px
+  }
+  textarea{resize:vertical;min-height:70px;line-height:1.45}
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  .g4{grid-template-columns:1.4fr 1fr 1fr .8fr}
+  @media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .entry{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px;background:var(--bg-2)}
+  .entry .rowtop{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .entry .rowtop b{flex:1;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke)}
+
+  /* ---- ações com barra de controle ---- */
+  .acoes-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .acoes-bar span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);font-weight:700;flex:1}
+  .acoes{list-style:none;margin:0;padding:0}
+  .acoes li{display:flex;gap:11px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+  .acoes li:first-child{border-top:none}
+  .acoes label{cursor:pointer;flex:1}
+  .acoes .del{background:none;border:none;color:var(--smoke);padding:0 4px;font-size:15px;letter-spacing:0}
+  .acoes .del:hover{color:#FF9A9A}
+
+  /* pré-visualização em papel */
+  .paper{
+    background:#fff;color:#111;border-radius:8px;padding:26px 30px;margin-top:14px;
+    font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.45;
+    max-height:520px;overflow:auto
+  }
+  .paper p{margin:8px 0}
+  .paper .n1{background:#c5c5c5;font-weight:700;text-transform:uppercase;padding:2px 4px}
+  .paper .ctr{text-align:center;font-weight:700;text-transform:uppercase}
+  .paper .just{text-align:justify}
+  .paper .num{display:inline-block;min-width:52px;color:#444}
+  .paper .sig{text-align:center;font-weight:700;margin-top:26px}
+
+  .hint{font-size:12.5px;color:var(--smoke);line-height:1.6;margin:10px 0 0}
+  .flash{color:var(--ok);font-size:12px;font-weight:600;letter-spacing:.05em;margin-left:10px}
+
+  /* ---- guia SEI ---- */
+  .sei-guide{display:flex;flex-direction:column;gap:16px}
+
+  .sei-req{background:rgba(255,201,60,.1);border:1px solid rgba(255,201,60,.4);border-radius:8px;
+    padding:12px 14px;font-size:13.5px;color:var(--ink);line-height:1.5}
+  .sei-req > b:first-child{color:var(--alert)}
+
+  .sei-illus{background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .sei-illus-label{font-size:12.5px;color:var(--ink-dim);margin-bottom:12px;line-height:1.5}
+  .sei-illus-label b{color:var(--ink)}
+  .sei-btnrow{display:flex;gap:5px;align-items:center;background:#e9edf0;border:1px solid #c9ced4;border-radius:5px;padding:7px 9px;width:max-content;max-width:100%}
+  .sei-fakebtn{width:32px;height:30px;border:1px solid transparent;border-radius:4px;background:#f4f6f8;display:grid;place-items:center;position:relative}
+  .sei-fakebtn.yellow{background:#FFD84D;border-color:#E0B02E}
+  .sei-fakebtn.hot{background:#FFD84D;border-color:#E0B02E;box-shadow:0 0 0 2px rgba(255,201,60,.55)}
+  .sei-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;font-weight:700;color:#c0392b;letter-spacing:-1px}
+  .sei-arrow{position:absolute;left:40px;top:50%;transform:translateY(-50%);white-space:nowrap;
+    font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--ember);text-transform:none}
+  .sei-illus-cap{font-size:12px;color:var(--smoke);margin-top:14px;line-height:1.5}
+  .sei-illus-cap b{color:var(--ink)}
+
+  .sei-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px;font-size:14px;color:var(--ink);line-height:1.5}
+  .sei-steps li{padding-left:4px}
+  .sei-steps b{color:var(--ink)}
+  .sei-steps i{color:var(--ember-soft);font-style:normal}
+
+  /* diálogo reproduzido */
+  .sei-dialog{background:#f7f8fa;border:1px solid #c9ced4;border-radius:8px;color:#333;overflow:hidden;max-width:420px}
+  .sei-dialog-title{background:#eef0f2;border-bottom:1px solid #d5dae0;padding:9px 13px;font-size:13px;color:#555;font-weight:600}
+  .sei-dialog-tabs{display:flex;gap:4px;padding:10px 12px 0}
+  .sei-dialog-tab{font-size:11.5px;padding:6px 9px;border:1px solid #c9ced4;border-bottom:none;border-radius:5px 5px 0 0;background:#e4e7ea;color:#555;white-space:nowrap}
+  .sei-dialog-tab.on{background:#2f7bd6;border-color:#2f7bd6;color:#fff}
+  .sei-dialog-body{padding:14px 14px 4px;border-top:1px solid #d5dae0}
+  .sei-file{font-size:12.5px;color:#444;margin-bottom:10px}
+  .sei-choose{display:inline-block;background:#eceff1;border:1px solid #c2c8ce;border-radius:4px;padding:3px 9px;color:#333;font-size:12px;margin-right:6px}
+  .sei-toggle{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#444;margin:9px 0}
+  .sei-toggle i{width:30px;height:16px;border-radius:99px;position:relative;flex:none}
+  .sei-toggle i.on{background:#2f7bd6}
+  .sei-toggle i.off{background:#c4cad0}
+  .sei-toggle i::after{content:"";position:absolute;top:2px;width:12px;height:12px;border-radius:50%;background:#fff}
+  .sei-toggle i.on::after{right:2px}
+  .sei-toggle i.off::after{left:2px}
+  .sei-dialog-foot{padding:12px 14px;text-align:right;border-top:1px solid #e2e6ea}
+  .sei-insert{display:inline-block;background:#2f7bd6;color:#fff;border-radius:4px;padding:6px 16px;font-size:12.5px;font-weight:600}
+
+  .sei-tip{font-size:12.5px;color:var(--ink-dim);background:var(--bg-2);border-left:2px solid var(--ember);
+    border-radius:0 6px 6px 0;padding:10px 13px;margin:0;line-height:1.55}
+  .sei-tip b{color:var(--ink)}
+
+  footer{margin-top:22px;font-size:12px;color:var(--smoke);line-height:1.6}
+  .hide{display:none}
+  @media (max-width:560px){h1{font-size:23px}.tag{display:none}.wrap{padding:20px 14px 70px}}
+  @media print{
+    body{background:#fff;color:#000}.tools,.chev,.tabs,.prazos-title::after{display:none}
+    .block{break-inside:avoid;border-color:#bbb}.block,.head,.fixed,.prazos-group{background:#fff}
+    .block.collapsed .items,.block.collapsed .note{display:block}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">CBMMG · CEB · Sala Coordenação CICC · FTP 2026</p>
+  <h1>Plantão da Sala de Coordenação
+    <span>Checklist da rotina + gerador do relatório de serviço para o SEI</span>
+  </h1>
+
+  <div class="prazos">
+    <p class="prazos-title">Prazos do turno</p>
+    <div class="prazos-groups">
+
+      <div class="prazos-group">
+        <div class="prazos-group-title alim">🍽 Alimentação — limites de solicitação</div>
+        <div class="prazo-row"><b>20:00</b><span>Café da manhã (dia anterior)</span></div>
+        <div class="prazo-row"><b>10:30</b><span>Almoço</span></div>
+        <div class="prazo-row"><b>14:30</b><span>Lanche da tarde</span></div>
+        <div class="prazo-row"><b>17:30</b><span>Jantar</span></div>
+      </div>
+
+      <div class="prazos-group">
+        <div class="prazos-group-title aer">✈ Aeronaves</div>
+        <div class="prazo-row"><b>06:00</b><span>Empenho diário de aeronaves</span></div>
+      </div>
+
+      <div class="prazos-group">
+        <div class="prazos-group-title reg">📋 Atualizações obrigatórias</div>
+        <div class="prazo-row"><b>08:00</b><span>Anúncio brigadistas · Atualização regional</span></div>
+        <div class="prazo-row"><b>09:00</b><span>Prazo final anúncio brigadistas</span></div>
+        <div class="prazo-row"><b>13:00</b><span>Atualização regional (2ª)</span></div>
+        <div class="prazo-row"><b>18:00</b><span>Atualização regional (3ª)</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="meter" style="margin-top:20px">
+    <div class="bar" id="bar"><i></i></div>
+    <b><em id="pdone">0</em>/<span id="ptotal">0</span> tarefas</b>
+  </div>
+</header>
+
+<div class="tabs">
+  <button id="tabCheck" class="on">Checklist</button>
+  <button id="tabRel">Relatório do serviço</button>
+</div>
+
+<!-- ============ CHECKLIST ============ -->
+<div id="viewCheck">
+  <div class="tools">
+    <button id="fPend">Mostrar só pendentes</button>
+    <button id="collapse">Recolher tudo</button>
+    <div class="spacer"></div>
+    <button id="print">Imprimir</button>
+    <button id="reset" class="danger">Novo plantão</button>
+  </div>
+
+  <div id="list"></div>
+
+  <section class="fixed">
+    <h3>Avisos permanentes do serviço</h3>
+    <ul>
+      <li><b>FLOE Uaimii</b> — não tem brigadistas.</li>
+      <li><b>PE Serra de Ouro Branco</b> e <b>PE Sete Salões</b> — sem brigadistas nos finais de semana.</li>
+      <li>Classificação DIAO: <b>04.001</b> incêndio em U.C. · <b>04.002</b> entorno de U.C. Fora dessas duas, <b>não há direito à alimentação</b>.</li>
+      <li>Salas Regionais devem atualizar as informações do inciso XIII, art. 14 do Memorando CBMMG/CEB nº 10/2026 <b>às 08h00, 13h00 e 18h00</b>, ou a cada mudança significativa de status.</li>
+      <li>Planilha de Operações FTP 2026: o CBMMG acessa <b>somente como leitor</b>.</li>
+      <li>Contato de brigadista pode ser recuperado nos anúncios anteriores.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Marque conforme executa — o progresso fica salvo neste dispositivo até você iniciar um novo plantão.<br>
+    Etiquetas: <b>contínuo</b> = repetir ao longo de todo o turno · <b>crítico</b> = não pode passar o serviço sem fazer.
+  </footer>
+</div>
+
+<!-- ============ RELATÓRIO ============ -->
+<div id="viewRel" class="hide">
+
+  <div class="card">
+    <h3>Identificação</h3>
+    <div class="grid g3">
+      <div><label class="f" for="rData">Data do serviço</label><input type="date" id="rData"></div>
+      <div><label class="f" for="rRef">Referência</label><input type="text" id="rRef" placeholder="Ordem de Serviço 60/2026 (144236457)"></div>
+      <div><label class="f" for="rAnexo">Anexo</label><input type="text" id="rAnexo" placeholder="Boletim Diário do dia ..."></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Efetivo</h3>
+    <div id="efetivoList"></div>
+    <button id="addEfetivo">+ Militar</button>
+  </div>
+
+  <div class="card">
+    <h3>Ocorrências</h3>
+    <div id="ocorrList"></div>
+    <button id="addOcorr" class="primary">+ Ocorrência</button>
+    <p class="hint">A linha sai como: <b>Local - Status - COB - RI - descrição</b>. Campos vazios são omitidos.</p>
+  </div>
+
+  <div class="card">
+    <h3>Ações da Sala de Coordenação</h3>
+    <div class="acoes-bar">
+      <span>Marque as ações realizadas no turno</span>
+      <button class="sm" id="acaoTudo">Selecionar tudo</button>
+      <button class="sm" id="acaoLimpar">Limpar seleção</button>
+    </div>
+    <ul class="acoes" id="acoesList"></ul>
+    <div class="grid g2" style="margin-top:12px">
+      <input type="text" id="acaoNova" placeholder="Adicionar outra ação realizada no turno">
+      <div><button id="addAcao">+ Ação</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Observações</h3>
+    <div id="obsList"></div>
+    <button id="addObs">+ Observação</button>
+  </div>
+
+  <div class="card">
+    <h3>Assinatura</h3>
+    <div class="grid g3">
+      <div><label class="f" for="sNome">Nome</label><input type="text" id="sNome" placeholder="Cleber Ribeiro de Carvalho"></div>
+      <div><label class="f" for="sPosto">Posto / graduação</label><select id="sPosto"></select></div>
+      <div><label class="f" for="sFuncao">Função</label><input type="text" id="sFuncao" placeholder="Coordenador da Sala Central"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Documento do SEI</h3>
+    <div class="tools" style="border:none;padding:0 0 4px;margin:0">
+      <button id="baixar" class="primary">Baixar HTML do SEI</button>
+      <button id="copiarHtml">Copiar código</button>
+      <button id="preview">Atualizar pré-visualização</button>
+      <span id="flash" class="flash"></span>
+      <div class="spacer"></div>
+      <button id="limparRel" class="danger">Limpar relatório</button>
+    </div>
+    <p class="hint" style="margin-top:14px">Depois de baixar, siga o passo a passo abaixo para importar no SEI.</p>
+    <div id="paper" class="paper"></div>
+  </div>
+
+  <div class="card">
+    <h3>Como inserir o HTML no SEI</h3>
+    <div class="sei-guide">
+
+      <div class="sei-req">
+        <b>⚠ Pré-requisito:</b> a extensão <b>Sei Pró</b> precisa estar instalada no navegador. Sem ela o botão de importar conteúdo externo não aparece / não funciona.
+      </div>
+
+      <div class="sei-illus">
+        <div class="sei-illus-label">Na 2ª barra de ferramentas do editor, o botão <b>“Inserir conteúdo externo”</b> fica <b>logo ao lado da lâmpada</b> e tem o símbolo <b>&lt;&gt;</b>:</div>
+        <div class="sei-btnrow">
+          <span class="sei-fakebtn"><svg viewBox="0 0 24 24" width="17" height="17"><circle cx="12" cy="9" r="5" fill="#FFD84D" stroke="#c8a828" stroke-width="1.2"/><rect x="9.5" y="14" width="5" height="4" rx="1" fill="#d9a441" stroke="#b98a2e" stroke-width=".8"/></svg></span>
+          <span class="sei-fakebtn hot" aria-label="Inserir conteúdo externo">
+            <span class="sei-code">&lt;&gt;</span>
+            <span class="sei-arrow">◄ este botão</span>
+          </span>
+        </div>
+        <div class="sei-illus-cap">É o botão <b>“Inserir conteúdo externo”</b>, imediatamente à direita da lâmpada.</div>
+      </div>
+
+      <ol class="sei-steps">
+        <li>Confirme que a extensão <b>Sei Pró</b> está instalada e ativa no navegador.</li>
+        <li><b>Crie o documento no SEI</b> como tipo <b>Relatório</b> e abra o editor.</li>
+        <li>Clique no botão <b>Inserir conteúdo externo</b> (símbolo <b>&lt;&gt;</b>, ao lado da lâmpada).</li>
+        <li>Na janela, mantenha a aba <b>Documento HTML ou Word (docx)</b>.</li>
+        <li>Clique em <b>Escolher arquivo</b> e selecione o HTML baixado (<i>Relatorio_Sala_Coordenacao_…html</i>).</li>
+        <li>Mantenha <b>ligado</b> o toggle <b>“Substituir todo o documento pelo conteúdo externo”</b>.</li>
+        <li>Deixe <b>desligado</b> o <b>“Corrigir erros de codificação de documentos Word”</b> (o arquivo já é HTML limpo).</li>
+        <li>Clique em <b>Inserir</b>. O corpo entra numerado (1., 1.1., 2.1. …); cabeçalho, data e assinatura o SEI mantém.</li>
+        <li>Confira, anexe o <b>Boletim Diário</b> e <b>assine</b>.</li>
+      </ol>
+
+      <div class="sei-dialog">
+        <div class="sei-dialog-title">Inserir conteúdo externo</div>
+        <div class="sei-dialog-tabs">
+          <span class="sei-dialog-tab on">⬆ Documento HTML ou Word (docx)</span>
+          <span class="sei-dialog-tab">Google Docs</span>
+          <span class="sei-dialog-tab">Google Planilhas</span>
+        </div>
+        <div class="sei-dialog-body">
+          <div class="sei-file">Importar documento HTML ou Word (docx):</div>
+          <div class="sei-file"><span class="sei-choose">Escolher arquivo</span> Nenhum arquivo escolhido</div>
+          <div class="sei-toggle"><i class="off"></i> Corrigir erros de codificação de documentos Word</div>
+          <div class="sei-toggle"><i class="on"></i> Substituir todo o documento pelo conteúdo externo</div>
+          <div class="sei-toggle"><i class="on"></i> Substituir campos dinâmicos no documento (se disponível)</div>
+        </div>
+        <div class="sei-dialog-foot"><span class="sei-insert">Inserir</span></div>
+      </div>
+
+      <p class="sei-tip">Alternativa sem baixar arquivo: use <b>Copiar código</b> acima e cole no botão <b>Código-fonte</b> (&lt;/&gt;) do editor — este caminho não depende do Sei Pró.</p>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+/* ===================== CHECKLIST ===================== */
+const DATA = [
+  {
+    n:"01", t:"Montar a estação de trabalho", sub:"Manter tudo aberto o turno inteiro",
+    items:[
+      {x:"Painel Geofogo aberto"},
+      {x:"Planilha de Operações FTP 2026 aberta", d:"<a href='https://docs.google.com/spreadsheets/u/0/d/1Q1NUmdX1WaEmsORVnlNvNdvMKJpDTYKdYVGUkSRNK-A/edit' target='_blank' rel='noopener'>Abrir planilha</a> — acesso apenas como leitor."},
+      {x:"Planilha REDS e RI's aberta", d:"<a href='https://docs.google.com/spreadsheets/d/1AEryLS99gGuc6xwlkCpwvdvC3KZkTpb27kTimEIaRGM/edit?gid=0#gid=0' target='_blank' rel='noopener'>Abrir planilha</a> — usada na auditoria dos COBs."},
+      {x:"WhatsApp “Sala Coordenação” aberto"},
+      {x:"Telegram aberto", d:"É por onde chega a mensagem por script das solicitações de alimentação."},
+      {x:"CAD aberto com os filtros aplicados", d:"Filtros: <code>Unidade de Conservação Estadual</code> e <code>Sala FTP</code>."},
+      {x:"Anunciar o efetivo da Sala Coordenação CICC nos grupos", d:"SMA – Sistema de Meio Ambiente CBMMG · CEB · Incêndios Florestais IEF e CBMMG.", tag:"critico"}
+    ],
+    note:"No CAD você apenas acompanha o andamento. Se alguma ocorrência não tiver sido relatada na Sala de Coordenação, <b>informe o ponto focal COB</b>."
+  },
+  {
+    n:"02", t:"Retomada do dia anterior", sub:"Antes de assumir o fluxo",
+    items:[
+      {x:"Conferir as ocorrências no Geofogo", d:"Gestão Operacional → filtrar por data."},
+      {x:"Conferir o Relatório de Serviço no SEI", d:"Acompanhamento Especial → CMA – Núcleo de Operações → Relatório de Serviço Sala de Coordenação 2026."},
+      {x:"Ler o boletim diário anexo ao relatório de serviço"},
+      {x:"Levantar pendências: ocorrências ativas, alimentação, aeronaves e anúncios faltantes", tag:"critico"}
+    ]
+  },
+  {
+    n:"03", t:"Alimentação", sub:"Geofogo → Logística",
+    items:[
+      {x:"Conferir as solicitações em Geofogo → Logística", tag:"continuo"},
+      {x:"Verificar no Telegram se a mensagem por script chegou", d:"Sem a mensagem, o pedido não chegou à fornecedora.", tag:"critico"},
+      {x:"Confirmar com o fornecedor se está tudo certo para o fornecimento", tag:"critico"},
+      {x:"Confirmar envio e recebimento das refeições em campo", tag:"critico"},
+      {x:"Atualizar o Telegram sobre pedidos atendidos fora do prazo"},
+      {x:"Café da manhã — solicitado até 20:00 do dia anterior"},
+      {x:"Almoço — solicitado até 10:30"},
+      {x:"Lanche da tarde — solicitado até 14:30"},
+      {x:"Jantar — solicitado até 17:30"},
+      {x:"Cruzar os anúncios de incêndio com os pedidos de alimentação", d:"Havendo incêndio anunciado sem pedido, apurar o motivo.", tag:"critico"},
+      {x:"Conferir a classificação DIAO no CAD antes de validar o pedido", d:"Só <code>04.001</code> e <code>04.002</code> dão direito à alimentação."},
+      {x:"Marcar “Alimentação paga?” (SIM/NÃO) na planilha de controle do contrato", d:"<a href='https://docs.google.com/spreadsheets/d/1qk7a1fQVs41wRU45j2q-HkPdm3A3n-JlW8NVgF_w6kA/edit?usp=sharing' target='_blank' rel='noopener'>Abrir planilha</a>", tag:"critico"}
+    ]
+  },
+  {
+    n:"04", t:"Aeronaves", sub:"Empenhos às 06:00",
+    items:[
+      {x:"Verificar a previsão de empenho de aeronaves do dia", tag:"critico"},
+      {x:"Exigir o preenchimento do link antes de qualquer solicitação"},
+      {x:"Conferir nome e contato do solicitante"},
+      {x:"Conferir a finalidade da aeronave", d:"Lançamento de água, transporte de tropa etc."},
+      {x:"Conferir se foi informado asa rotativa ou asa fixa"},
+      {x:"Conferir as coordenadas geográficas da pista ou heliponto", tag:"critico"},
+      {x:"Despachar com o COMAVE e o BOA e atualizar status da solicitação e do recurso"},
+      {x:"Registrar a finalização do emprego da aeronave"}
+    ]
+  },
+  {
+    n:"05", t:"Focos de calor", sub:"Geofogo → Status meteorológico",
+    items:[
+      {x:"Monitorar constantemente os focos de calor via satélite", tag:"continuo"},
+      {x:"A cada novo foco: certificar-se de que a unidade/fração está ciente, pelo ponto focal COB", tag:"critico"},
+      {x:"Registrar no relatório do SEI que foi dada a ciência", tag:"critico"},
+      {x:"Enviar print e coordenadas convertidas no grupo “Sala de Coordenação” pedindo verificação in loco", tag:"critico"},
+      {x:"Registrar a resposta recebida da verificação in loco"},
+      {x:"Conferir no CAD a classificação do incêndio", d:"<code>04.001</code> incêndio em U.C. · <code>04.002</code> entorno de U.C."},
+      {x:"Acompanhar previsão do tempo e monitoramento meteorológico", tag:"continuo"}
+    ]
+  },
+  {
+    n:"06", t:"Anúncios e RI's", sub:"Brigadistas por volta das 09:00",
+    items:[
+      {x:"Conferir o anúncio diário dos brigadistas contratados no Geofogo", tag:"critico"},
+      {x:"Conferir o anúncio diário das Bases Avançadas no Geofogo", tag:"critico"},
+      {x:"Não havendo anúncio, acionar o ponto focal COB ou o brigadista mais experiente"},
+      {x:"Conferir o anúncio padrão do incêndio no grupo dos operadores e acusar recebimento com “joia”", tag:"critico"},
+      {x:"Copiar, filtrar e enviar o anúncio padrão no grupo “Incêndios Florestais IEF e CBMMG”", d:"Usar o termo <b>brigadista FTP</b> ou <b>brigadista AMDA</b>.", tag:"critico"},
+      {x:"Monitorar os RI's da Sala de Situação e procurar os REDS relacionados", tag:"continuo"},
+      {x:"Conferir o preenchimento do formulário de operações", d:"Aba Gestão Operacional do painel Geofogo.", tag:"critico"}
+    ]
+  },
+  {
+    n:"07", t:"Fechamento e registro", sub:"Boletim, SEI e passagem de serviço",
+    items:[
+      {x:"Emitir e salvar o boletim diário no Geofogo", d:"Botão de disquete no cabeçalho do painel.", tag:"critico"},
+      {x:"Montar o relatório na aba “Relatório do serviço” e baixar o HTML", tag:"critico"},
+      {x:"Importar o HTML no SEI e anexar o boletim diário", tag:"critico"},
+      {x:"Alimentar o documento compartilhado de problemas e sugestões do Painel GeoFogo"},
+      {x:"Conferir se toda ocorrência do dia tem formulário de operações preenchido", tag:"critico"},
+      {x:"Conferir se todo pedido de alimentação está validado e marcado na planilha", tag:"critico"},
+      {x:"Conferir se nenhuma aeronave ficou com status desatualizado"},
+      {x:"Passar o serviço: ocorrências ativas, aeronaves, alimentação pendente e efetivo faltante", tag:"critico"}
+    ]
+  }
+];
+
+const KEY     = "plantao-sala-coordenacao-v5";
+const KEY_REL = "plantao-relatorio-v5";
+let state = {}, collapsed = {}, onlyPending = false;
+const list = document.getElementById("list");
+const id   = (b,i) => b + "." + i;
+
+function render(){
+  list.innerHTML = "";
+  DATA.forEach((blk, bi) => {
+    const ids  = blk.items.map((_,ii) => id(bi,ii));
+    const done = ids.filter(k => state[k]).length;
+    const el   = document.createElement("section");
+    el.className = "block" + (done===ids.length?" done":"") + (collapsed[bi]?" collapsed":"");
+
+    const head = document.createElement("div");
+    head.className = "head";
+    head.setAttribute("role","button"); head.tabIndex = 0;
+    head.innerHTML =
+      `<div class="seq">${done===ids.length?"✓":blk.n}</div>
+       <h2>${blk.t}<small>${blk.sub}</small></h2>
+       <span class="count">${done}/${ids.length}</span>
+       <span class="chev">▾</span>`;
+    head.onclick    = () => { collapsed[bi] = !collapsed[bi]; render(); };
+    head.onkeydown  = e  => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); head.click(); } };
+    el.appendChild(head);
+
+    const ul = document.createElement("ul");
+    ul.className = "items";
+
+    const barLi = document.createElement("li");
+    barLi.className = "grp-bar";
+    barLi.innerHTML =
+      `<button class="sm grp-mark">Marcar tudo</button>
+       <button class="sm grp-clear">Limpar</button>`;
+    barLi.querySelector(".grp-mark").onclick = () => {
+      const agora = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+      blk.items.forEach((_,ii) => { if(!state[id(bi,ii)]) state[id(bi,ii)] = agora; });
+      save(); render();
+    };
+    barLi.querySelector(".grp-clear").onclick = () => {
+      blk.items.forEach((_,ii) => delete state[id(bi,ii)]);
+      save(); render();
+    };
+    ul.appendChild(barLi);
+    blk.items.forEach((it,ii) => {
+      const k = id(bi,ii), isDone = !!state[k];
+      const li = document.createElement("li");
+      li.className = (isDone?"checked ":"") + (onlyPending&&isDone?"hidden":"");
+      const tag   = it.tag ? `<span class="tag ${it.tag}">${it.tag==="continuo"?"contínuo":"crítico"}</span>` : "";
+      const stamp = isDone ? `<span class="stamp">${state[k]}</span>` : "";
+      li.innerHTML =
+        `<input type="checkbox" id="c-${k}" ${isDone?"checked":""}>
+         <label class="txt" for="c-${k}"><strong>${it.x}</strong>${it.d?`<p>${it.d}</p>`:""}</label>
+         ${stamp||tag}`;
+      li.querySelector("input").onchange = e => {
+        if(e.target.checked)
+          state[k] = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+        else delete state[k];
+        save(); render();
+      };
+      ul.appendChild(li);
+    });
+    el.appendChild(ul);
+
+    if(blk.note){
+      const nt = document.createElement("div");
+      nt.className = "note"; nt.innerHTML = blk.note;
+      el.appendChild(nt);
+    }
+    list.appendChild(el);
+  });
+  updateMeter();
+}
+
+function updateMeter(){
+  const total = DATA.reduce((s,b) => s + b.items.length, 0);
+  const done  = Object.keys(state).length;
+  document.getElementById("pdone").textContent  = done;
+  document.getElementById("ptotal").textContent = total;
+  const bar = document.getElementById("bar");
+  bar.querySelector("i").style.width = (done/total*100) + "%";
+  bar.classList.toggle("full", done===total);
+}
+
+/* armazenamento: localStorage no navegador; memória se indisponível */
+const Store = (() => {
+  let ok = false;
+  try { const t="__t"; localStorage.setItem(t,"1"); localStorage.removeItem(t); ok = true; } catch(e){ ok = false; }
+  const mem = {};
+  return {
+    get(k){ try{ return ok ? localStorage.getItem(k) : (mem[k] ?? null); }catch(e){ return mem[k] ?? null; } },
+    set(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } }
+  };
+})();
+
+async function save(){ Store.set(KEY, JSON.stringify(state)); }
+async function load(){
+  try{ const r = Store.get(KEY); if(r) state = JSON.parse(r); }
+  catch(e){ state = {}; }
+  render();
+}
+
+document.getElementById("fPend").onclick = e => {
+  onlyPending = !onlyPending;
+  e.target.classList.toggle("on", onlyPending);
+  e.target.textContent = onlyPending ? "Mostrar todas" : "Mostrar só pendentes";
+  render();
+};
+document.getElementById("collapse").onclick = e => {
+  const any = DATA.some((_,i) => !collapsed[i]);
+  DATA.forEach((_,i) => collapsed[i] = any);
+  e.target.textContent = any ? "Expandir tudo" : "Recolher tudo";
+  render();
+};
+document.getElementById("print").onclick = () => window.print();
+document.getElementById("reset").onclick  = () => {
+  if(confirm("Limpar todas as marcações e iniciar um novo plantão?")){ state = {}; save(); render(); }
+};
+
+/* ===================== ABAS ===================== */
+const tabCheck = document.getElementById("tabCheck"), tabRel = document.getElementById("tabRel");
+const viewCheck = document.getElementById("viewCheck"), viewRel = document.getElementById("viewRel");
+tabCheck.onclick = () => {
+  tabCheck.classList.add("on"); tabRel.classList.remove("on");
+  viewCheck.classList.remove("hide"); viewRel.classList.add("hide");
+};
+tabRel.onclick = () => {
+  tabRel.classList.add("on"); tabCheck.classList.remove("on");
+  viewRel.classList.remove("hide"); viewCheck.classList.add("hide");
+  desenhaPreview();
+};
+
+/* ===================== RELATÓRIO ===================== */
+const ACOES_PADRAO = [
+  "Conferência do Anúncio Diário dos Brigadistas contratados no Geofogo",
+  "Conferência do Anúncio Diário das Bases Avançadas no Geofogo",
+  "Conferência das solicitações de refeições e devido encaminhamento à fornecedora",
+  "Confirmação de envio e recebimento das refeições em campo",
+  "Atualização do Telegram para os pedidos atendidos de alimentação realizados fora do prazo",
+  "Encaminhamento de demandas às Salas de Coordenação Regionais",
+  "Monitoramento de focos de calor via satélite",
+  "Monitoramento do CAD",
+  "Monitoramento dos RI's da Sala de Situação e procura por REDS relacionados",
+  "Acompanhamento da previsão do tempo e o monitoramento meteorológico",
+  "Elaboração e atualização de informações e estatísticas coletadas",
+  "Gerenciamento da Plataforma GeoFOGO",
+  "Alimentação de documento compartilhado relatando problemas e sugestões para melhorias no Painel GeoFogo"
+];
+
+const STATUS = ["Em andamento","Em monitoramento","Debelado","Rescaldo","Aguardando verificação"];
+
+const POSTOS = [
+  "Cel BM","Ten Cel BM","Maj BM","Cap BM","1º Ten BM","2º Ten BM","Asp Of BM",
+  "Subten BM","1º Sgt BM","2º Sgt BM","3º Sgt BM","Cb BM","Sd BM"
+];
+const POSTOS_EXTENSO = [
+  "Coronel BM","Tenente-Coronel BM","Major BM","Capitão BM","1º Tenente BM","2º Tenente BM",
+  "Aspirante a Oficial BM","Subtenente BM","1º Sargento BM","2º Sargento BM","3º Sargento BM",
+  "Cabo BM","Soldado BM"
+];
+
+function fmtNumBM(v){
+  const d = (v||"").replace(/\D/g,"").slice(0,7);
+  if(d.length<=3) return d;
+  if(d.length<=6) return d.slice(0,3) + "." + d.slice(3);
+  return d.slice(0,3) + "." + d.slice(3,6) + "-" + d.slice(6);
+}
+
+let rel = {
+  data:"", ref:"Ordem de Serviço 60/2026 (144236457)", anexo:"",
+  efetivo:[{n:"",p:"",nome:""}], ocorr:[],
+  acoes: ACOES_PADRAO.map(a=>({t:a,on:false})), obs:[],
+  sig:{nome:"",posto:"",funcao:""}
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const lim = s => (s||"").trim().replace(/\s*\n\s*/g," ");
+
+async function saveRel(){ Store.set(KEY_REL, JSON.stringify(rel)); }
+async function loadRel(){
+  try{
+    const r = Store.get(KEY_REL);
+    if(r){
+      const v = JSON.parse(r);
+      rel = Object.assign(rel, v);
+      ACOES_PADRAO.forEach(a => { if(!rel.acoes.some(x=>x.t===a)) rel.acoes.push({t:a,on:false}); });
+    }
+  }catch(e){}
+  if(!rel.data)  rel.data  = new Date().toISOString().slice(0,10);
+  if(!rel.anexo) rel.anexo = "Boletim Diário do dia " + fmtData(rel.data);
+  renderRel();
+}
+
+function buildSelectOpts(arr, val, placeholder){
+  return `<option value="">${placeholder||"—"}</option>` + arr.map(p=>`<option ${val===p?"selected":""}>${esc(p)}</option>`).join("");
+}
+
+function renderRel(){
+  /* select do posto da assinatura */
+  const sp = $("#sPosto");
+  if(!sp.options.length || sp.options.length===1)
+    sp.innerHTML = buildSelectOpts(POSTOS_EXTENSO, rel.sig.posto);
+  else sp.value = rel.sig.posto;
+
+  $("#rData").value = rel.data;
+  $("#rRef").value  = rel.ref;
+  $("#rAnexo").value= rel.anexo;
+  $("#sNome").value = rel.sig.nome;
+  $("#sFuncao").value=rel.sig.funcao;
+
+  /* efetivo */
+  const ef = $("#efetivoList"); ef.innerHTML = "";
+  rel.efetivo.forEach((m,i) => {
+    const d = document.createElement("div");
+    d.className = "entry";
+    d.innerHTML =
+      `<div class="rowtop">
+         <b>Militar ${i+1}</b>
+         <button class="sm" data-del="1">Remover</button>
+       </div>
+       <div class="grid g3">
+         <div>
+           <label class="f">Número BM</label>
+           <input type="text" data-ef="n" inputmode="numeric" value="${esc(m.n)}" placeholder="0827436">
+         </div>
+         <div>
+           <label class="f">Posto / graduação</label>
+           <select data-ef="p">${buildSelectOpts(POSTOS, m.p)}</select>
+         </div>
+         <div>
+           <label class="f">Nome</label>
+           <input type="text" data-ef="nome" value="${esc(m.nome)}" placeholder="Nome completo">
+         </div>
+       </div>`;
+    d.querySelector("[data-del]").onclick = () => { rel.efetivo.splice(i,1); saveRel(); renderRel(); };
+    d.querySelectorAll("[data-ef]").forEach(inp => {
+      const campo = inp.dataset.ef;
+      if(inp.tagName==="SELECT"){
+        inp.onchange = e => { rel.efetivo[i].p = e.target.value; saveRel(); desenhaPreview(); };
+      } else if(campo==="n"){
+        inp.oninput = e => {
+          const pos   = e.target.selectionStart, antes = e.target.value.length;
+          const novo  = fmtNumBM(e.target.value);
+          e.target.value = novo;
+          const delta = novo.length - antes;
+          try{ e.target.setSelectionRange(pos+delta, pos+delta); }catch(_){}
+          rel.efetivo[i].n = novo; saveRel(); desenhaPreview();
+        };
+      } else {
+        inp.oninput = e => { rel.efetivo[i][campo] = e.target.value; saveRel(); desenhaPreview(); };
+      }
+    });
+    ef.appendChild(d);
+  });
+
+  /* ocorrências */
+  const oc = $("#ocorrList"); oc.innerHTML = "";
+  rel.ocorr.forEach((o,i) => {
+    const d = document.createElement("div");
+    d.className = "entry";
+    d.innerHTML =
+      `<div class="rowtop">
+         <b>Ocorrência ${i+1}</b>
+         <button class="sm" data-del="1">Remover</button>
+       </div>
+       <div class="grid g4">
+         <div><label class="f">Local / UC</label>
+           <input type="text" data-oc="local" value="${esc(o.local)}" placeholder="ZA PE Serra do Cabral">
+         </div>
+         <div><label class="f">Status</label>
+           <select data-oc="status">${buildSelectOpts(STATUS, o.status||"Em andamento", "— status —")}</select>
+         </div>
+         <div><label class="f">COB</label>
+           <input type="text" data-oc="cob" value="${esc(o.cob)}" placeholder="4º COB">
+         </div>
+         <div><label class="f">RI</label>
+           <input type="text" data-oc="ri" value="${esc(o.ri)}" placeholder="166">
+         </div>
+       </div>
+       <div style="margin-top:12px">
+         <label class="f">Descrição (município, horário, coordenadas, REDS, quem atuou)</label>
+         <textarea data-oc="desc" placeholder="Incêndio iniciado às 10h55min do dia 14/08...">${esc(o.desc)}</textarea>
+       </div>`;
+    d.querySelector("[data-del]").onclick = () => { rel.ocorr.splice(i,1); saveRel(); renderRel(); };
+    d.querySelectorAll("[data-oc]").forEach(inp => {
+      const ev = inp.tagName==="SELECT" ? "onchange" : "oninput";
+      inp[ev] = e => { rel.ocorr[i][e.target.dataset.oc] = e.target.value; saveRel(); desenhaPreview(); };
+    });
+    oc.appendChild(d);
+  });
+
+  /* ações */
+  const ac = $("#acoesList"); ac.innerHTML = "";
+  rel.acoes.forEach((a,i) => {
+    const li = document.createElement("li");
+    li.innerHTML =
+      `<input type="checkbox" id="a-${i}" ${a.on?"checked":""}>
+       <label for="a-${i}">${esc(a.t)}</label>
+       <button class="del" title="Remover">×</button>`;
+    li.querySelector("input").onchange = e => { rel.acoes[i].on = e.target.checked; saveRel(); };
+    li.querySelector(".del").onclick   = () => { rel.acoes.splice(i,1); saveRel(); renderRel(); };
+    ac.appendChild(li);
+  });
+
+  /* observações */
+  const ob = $("#obsList"); ob.innerHTML = "";
+  rel.obs.forEach((o,i) => {
+    const d = document.createElement("div");
+    d.className = "entry";
+    d.innerHTML =
+      `<div class="rowtop">
+         <b>Observação ${i+1}</b>
+         <button class="sm" data-del="1">Remover</button>
+       </div>
+       <textarea placeholder="Ex.: A aba de Status meteorológico do Geofogo ficou inoperante várias vezes durante o dia.">${esc(o)}</textarea>`;
+    d.querySelector("[data-del]").onclick = () => { rel.obs.splice(i,1); saveRel(); renderRel(); };
+    d.querySelector("textarea").oninput  = e => { rel.obs[i] = e.target.value; saveRel(); desenhaPreview(); };
+    ob.appendChild(d);
+  });
+
+  desenhaPreview();
+}
+
+function fmtData(iso){
+  if(!iso) return "";
+  const [a,m,d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
+function diaSemana(iso){
+  if(!iso) return "";
+  const dias = ["DOMINGO","SEGUNDA-FEIRA","TERÇA-FEIRA","QUARTA-FEIRA","QUINTA-FEIRA","SEXTA-FEIRA","SÁBADO"];
+  const [a,m,d] = iso.split("-").map(Number);
+  return dias[new Date(a,m-1,d).getDay()];
+}
+
+/* ---- listeners identificação / assinatura ---- */
+$("#rData").onchange  = e => {
+  const old = "Boletim Diário do dia " + fmtData(rel.data);
+  rel.data  = e.target.value;
+  if(!rel.anexo || rel.anexo===old) rel.anexo = "Boletim Diário do dia " + fmtData(rel.data);
+  saveRel(); renderRel();
+};
+$("#rRef").oninput    = e => { rel.ref    = e.target.value; saveRel(); desenhaPreview(); };
+$("#rAnexo").oninput  = e => { rel.anexo  = e.target.value; saveRel(); desenhaPreview(); };
+$("#sNome").oninput   = e => { rel.sig.nome   = e.target.value; saveRel(); desenhaPreview(); };
+$("#sPosto").onchange = e => { rel.sig.posto  = e.target.value; saveRel(); desenhaPreview(); };
+$("#sFuncao").oninput = e => { rel.sig.funcao = e.target.value; saveRel(); desenhaPreview(); };
+
+/* ---- botões ---- */
+$("#addEfetivo").onclick = () => { rel.efetivo.push({n:"",p:"",nome:""}); saveRel(); renderRel(); };
+$("#addOcorr").onclick   = () => { rel.ocorr.push({local:"",status:"Em andamento",cob:"",ri:"",desc:""}); saveRel(); renderRel(); };
+$("#addObs").onclick     = () => { rel.obs.push(""); saveRel(); renderRel(); };
+$("#addAcao").onclick    = () => {
+  const v = $("#acaoNova").value.trim();
+  if(!v) return;
+  rel.acoes.push({t:v, on:true});
+  $("#acaoNova").value = "";
+  saveRel(); renderRel();
+};
+$("#acaoNova").onkeydown = e => { if(e.key==="Enter") $("#addAcao").click(); };
+
+/* selecionar tudo / limpar — ações */
+$("#acaoTudo").onclick   = () => { rel.acoes.forEach(a => a.on=true);  saveRel(); renderRel(); };
+$("#acaoLimpar").onclick = () => { rel.acoes.forEach(a => a.on=false); saveRel(); renderRel(); };
+
+/* ---- montagem do HTML SEI ---- */
+const P_CTR = 'style="text-align:center; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
+const P_JUS = 'style="text-align:justify; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
+const P_ESQ = 'style="text-align:left; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
+
+function linhaOcorr(o){
+  const arr = [];
+  if(lim(o.local))  arr.push(esc(lim(o.local)));
+  if(o.status)      arr.push(`<strong>${esc(o.status)}</strong>`);
+  if(lim(o.cob))    arr.push(esc(lim(o.cob)));
+  if(lim(o.ri))     arr.push("RI " + esc(lim(o.ri)));
+  let s = arr.join(" - ");
+  if(lim(o.desc))   s += " - " + esc(lim(o.desc));
+  return s;
+}
+
+function montarHTML(){
+  const L = [];
+  L.push(`<p ${P_CTR}><strong>COMANDO ESPECIALIZADO DE BOMBEIROS</strong></p>`);
+  L.push(`<p ${P_CTR}><strong>RELATÓRIO DE SERVIÇO DA SALA DE COORDENAÇÃO OPERACIONAL</strong></p>`);
+  L.push(`<p ${P_CTR}><strong>${esc(fmtData(rel.data))} - ${esc(diaSemana(rel.data))}</strong></p>`);
+  if(lim(rel.ref))
+    L.push(`<p class="Texto_Alinhado_Esquerda" ${P_ESQ}><strong>Referência:</strong>&nbsp;${esc(lim(rel.ref))}</p>`);
+
+  const efet = rel.efetivo.filter(m => lim(m.nome));
+  if(efet.length){
+    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>EFETIVO</strong></p>`);
+    efet.forEach(m => {
+      const txt = [lim(m.n)?"Nº "+esc(lim(m.n))+",":"", esc(lim(m.p)), esc(lim(m.nome))].filter(Boolean).join(" ");
+      L.push(`<p class="Item_Nivel2" ${P_JUS}>${txt}</p>`);
+    });
+  }
+
+  const ocs = rel.ocorr.filter(o => lim(o.local)||lim(o.desc));
+  if(ocs.length){
+    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>OCORRÊNCIAS</strong></p>`);
+    ocs.forEach(o => L.push(`<p class="Item_Nivel2" ${P_JUS}>${linhaOcorr(o)}</p>`));
+  }
+
+  const acs = rel.acoes.filter(a => a.on);
+  if(acs.length){
+    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>AÇÕES DA SALA DE COORDENAÇÃO</strong></p>`);
+    acs.forEach(a => {
+      const t = lim(a.t).replace(/[;.]$/,"");
+      L.push(`<p class="Item_Nivel2" ${P_JUS}>${esc(t)};</p>`);
+    });
+  }
+
+  const obs = rel.obs.filter(o => lim(o));
+  if(obs.length){
+    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>OBSERVAÇÕES</strong></p>`);
+    obs.forEach(o => L.push(`<p class="Item_Nivel2" ${P_JUS}>${esc(lim(o))}</p>`));
+  }
+
+  if(lim(rel.anexo)){
+    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>ANEXO</strong></p>`);
+    L.push(`<p class="Item_Nivel2" ${P_JUS}>${esc(lim(rel.anexo))}</p>`);
+  }
+
+  const nomePosto = [lim(rel.sig.nome), lim(rel.sig.posto)].filter(Boolean).join(", ");
+  if(nomePosto || lim(rel.sig.funcao)){
+    L.push(`<p class="Nome_Signatário" ${P_CTR}><br></p>`);
+    if(nomePosto)          L.push(`<p class="Nome_Signatário" ${P_CTR}><strong>${esc(nomePosto)}</strong></p>`);
+    if(lim(rel.sig.funcao))L.push(`<p class="Nome_Signatário" ${P_CTR}><strong>${esc(lim(rel.sig.funcao))}</strong></p>`);
+  }
+  return L.join("\n") + "\n";
+}
+
+/* ---- pré-visualização em papel ---- */
+function desenhaPreview(){
+  const paper = $("#paper");
+  let n1=0, n2=0, out="";
+  montarHTML().split("\n").filter(Boolean).forEach(linha => {
+    const c = linha.replace(/^<p[^>]*>/,"").replace(/<\/p>$/,"");
+    if(linha.includes('class="Item_Nivel1"')){
+      n1++; n2=0;
+      out += `<p class="just"><span class="num">${n1}.</span><span class="n1">${c}</span></p>`;
+    } else if(linha.includes('class="Item_Nivel2"')){
+      n2++;
+      out += `<p class="just"><span class="num">${n1}.${n2}.</span>${c}</p>`;
+    } else if(linha.includes('class="Nome_Signatário"')){
+      out += `<p class="sig">${c}</p>`;
+    } else if(linha.includes("text-align:center")){
+      out += `<p class="ctr">${c}</p>`;
+    } else {
+      out += `<p>${c}</p>`;
+    }
+  });
+  paper.innerHTML = out || '<p style="color:#777">Preencha os dados do relatório.</p>';
+}
+
+function nomeArquivo(){
+  return "Relatorio_Sala_Coordenacao_" + (fmtData(rel.data)||"sem-data").replace(/\//g,"-") + ".html";
+}
+
+$("#baixar").onclick = () => {
+  const faltas = [];
+  if(!rel.data)  faltas.push("data");
+  if(!rel.efetivo.some(m=>lim(m.nome)))  faltas.push("efetivo");
+  if(!lim(rel.sig.nome)) faltas.push("assinatura");
+  if(faltas.length && !confirm("Faltando: " + faltas.join(", ") + ".\nBaixar mesmo assim?")) return;
+  const blob = new Blob([montarHTML()], {type:"text/html;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = nomeArquivo();
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  flash("Arquivo baixado");
+};
+
+$("#copiarHtml").onclick = async () => {
+  const txt = montarHTML();
+  try{ await navigator.clipboard.writeText(txt); flash("Código copiado"); }
+  catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove(); flash("Código copiado");
+  }
+};
+
+$("#preview").onclick  = () => { desenhaPreview(); flash("Atualizado"); };
+
+$("#limparRel").onclick = () => {
+  if(!confirm("Limpar os dados do relatório?")) return;
+  rel = {
+    data: new Date().toISOString().slice(0,10),
+    ref: rel.ref, anexo:"",
+    efetivo:[{n:"",p:"",nome:""}], ocorr:[],
+    acoes: ACOES_PADRAO.map(a=>({t:a,on:false})), obs:[],
+    sig:{nome:rel.sig.nome, posto:rel.sig.posto, funcao:rel.sig.funcao}
+  };
+  rel.anexo = "Boletim Diário do dia " + fmtData(rel.data);
+  saveRel(); renderRel();
+};
+
+function flash(msg){
+  const f=$("#flash"); f.textContent=msg;
+  setTimeout(()=>{ f.textContent=""; }, 1800);
+}
+
+load();
+loadRel();
+</script>
+</body>
+</html>

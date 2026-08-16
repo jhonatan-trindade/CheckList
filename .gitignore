@@ -1,0 +1,9 @@
+# clasp (caso você use a CLI do Apps Script para sincronizar)
+.clasp.json
+.clasprc.json
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
