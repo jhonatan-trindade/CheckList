@@ -348,7 +348,7 @@
     <h3>Ocorrências</h3>
     <div id="ocorrList"></div>
     <button id="addOcorr" class="primary">+ Ocorrência</button>
-    <p class="hint">A linha sai como: <b>Local - Status - COB - RI - descrição</b>. Campos vazios são omitidos.</p>
+    <p class="hint">A linha sai como: <b>Local - Status - COB - REDS - descrição</b>. Campos vazios são omitidos.</p>
   </div>
 
   <div class="card">
@@ -821,7 +821,7 @@ function renderRel(){
          <div><label class="f">COB</label>
            <input type="text" data-oc="cob" value="${esc(o.cob)}" placeholder="4º COB">
          </div>
-         <div><label class="f">RI</label>
+         <div><label class="f">REDS</label>
            <input type="text" data-oc="ri" value="${esc(o.ri)}" placeholder="166">
          </div>
        </div>
@@ -921,7 +921,7 @@ function linhaOcorr(o){
   if(lim(o.local))  arr.push(esc(lim(o.local)));
   if(o.status)      arr.push(`<strong>${esc(o.status)}</strong>`);
   if(lim(o.cob))    arr.push(esc(lim(o.cob)));
-  if(lim(o.ri))     arr.push("RI " + esc(lim(o.ri)));
+  if(lim(o.ri))     arr.push("REDS " + esc(lim(o.ri)));
   let s = arr.join(" - ");
   if(lim(o.desc))   s += " - " + esc(lim(o.desc));
   return s;
