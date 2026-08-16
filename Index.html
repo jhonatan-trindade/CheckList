@@ -16,7 +16,11 @@
     background:radial-gradient(1100px 500px at 12% -10%, rgba(255,122,24,.10), transparent 60%),var(--bg);
     color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
   }
+  /* evita que itens flex/grid estourem a largura no celular */
+  .txt,.head h2,.acoes label,.entry .rowtop b,.grid > div{min-width:0}
+  img,svg{max-width:100%}
   .wrap{max-width:960px;margin:0 auto;padding:28px 20px 90px}
 
   header{border-bottom:1px solid var(--line);padding-bottom:20px}
@@ -124,7 +128,7 @@
   .card > h3{margin:0 0 14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
   label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin:0 0 5px;font-weight:600}
   input[type=text],input[type=date],select,textarea{
-    width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--bg-2);
+    width:100%;max-width:100%;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--bg-2);
     border:1px solid var(--line);border-radius:6px;padding:9px 11px
   }
   textarea{resize:vertical;min-height:70px;line-height:1.45}
@@ -190,7 +194,7 @@
   .sei-steps i{color:var(--ember-soft);font-style:normal}
 
   /* diálogo reproduzido */
-  .sei-dialog{background:#f7f8fa;border:1px solid #c9ced4;border-radius:8px;color:#333;overflow:hidden;max-width:420px}
+  .sei-dialog{background:#f7f8fa;border:1px solid #c9ced4;border-radius:8px;color:#333;overflow:hidden;max-width:min(420px,100%)}
   .sei-dialog-title{background:#eef0f2;border-bottom:1px solid #d5dae0;padding:9px 13px;font-size:13px;color:#555;font-weight:600}
   .sei-dialog-tabs{display:flex;gap:4px;padding:10px 12px 0}
   .sei-dialog-tab{font-size:11.5px;padding:6px 9px;border:1px solid #c9ced4;border-bottom:none;border-radius:5px 5px 0 0;background:#e4e7ea;color:#555;white-space:nowrap}
@@ -214,7 +218,28 @@
 
   footer{margin-top:22px;font-size:12px;color:var(--smoke);line-height:1.6}
   .hide{display:none}
-  @media (max-width:560px){h1{font-size:23px}.tag{display:none}.wrap{padding:20px 14px 70px}}
+  @media (max-width:640px){
+    .card{padding:14px}
+    .paper{padding:18px 16px}
+    .sei-illus,.sei-req,.sei-tip{padding:12px}
+    .sei-dialog-tabs{flex-wrap:wrap}
+    .sei-btnrow{width:auto}
+    .entry .rowtop{align-items:flex-start}
+  }
+  @media (max-width:560px){
+    h1{font-size:23px}
+    .tag{display:none}
+    .wrap{padding:20px 14px 70px}
+    .tabs button{margin-right:12px;font-size:14px}
+    .head{gap:10px;padding:13px 14px}
+    .items{padding:0 14px 12px}
+    .seq{width:30px;height:30px}
+    .prazos-groups{flex-direction:column}
+    .prazos-group{min-width:0}
+    .prazo-row span{min-width:0}
+    .sei-steps{padding-left:18px}
+    .paper{padding:16px 14px}
+  }
   @media print{
     body{background:#fff;color:#000}.tools,.chev,.tabs,.prazos-title::after{display:none}
     .block{break-inside:avoid;border-color:#bbb}.block,.head,.fixed,.prazos-group{background:#fff}
@@ -349,7 +374,7 @@
   <div class="card">
     <h3>Assinatura</h3>
     <div class="grid g3">
-      <div><label class="f" for="sNome">Nome</label><input type="text" id="sNome" placeholder="Cleber Ribeiro de Carvalho"></div>
+      <div><label class="f" for="sNome">Nome</label><input type="text" id="sNome" placeholder="Rafael Oliveira Bittencourt"></div>
       <div><label class="f" for="sPosto">Posto / graduação</label><select id="sPosto"></select></div>
       <div><label class="f" for="sFuncao">Função</label><input type="text" id="sFuncao" placeholder="Coordenador da Sala Central"></div>
     </div>
@@ -744,7 +769,7 @@ function renderRel(){
        <div class="grid g3">
          <div>
            <label class="f">Número BM</label>
-           <input type="text" data-ef="n" inputmode="numeric" value="${esc(m.n)}" placeholder="0827436">
+           <input type="text" data-ef="n" inputmode="numeric" value="${esc(m.n)}" placeholder="3645059">
          </div>
          <div>
            <label class="f">Posto / graduação</label>
