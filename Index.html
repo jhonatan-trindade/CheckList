@@ -279,9 +279,13 @@
   .tabmini b{color:var(--ink)}
   @media (max-width:560px){.tabmini{display:none}}
 
-  /* --- navegação por seção (chips) --- */
-  .secnav{display:flex;gap:8px;flex-wrap:wrap;padding:18px 0 4px}
-  .navchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg-2);
+  /* --- navegação por seção (atalhos em linha única) --- */
+  .secnav{display:flex;align-items:center;gap:12px;padding:18px 0 4px}
+  .secnav-lbl{flex:none;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);font-weight:800}
+  .secnav-row{flex:1;min-width:0;display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .secnav-row::-webkit-scrollbar{height:6px}
+  .secnav-row::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+  .navchip{flex:none;white-space:nowrap;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg-2);
     border-radius:99px;padding:6px 12px 6px 9px;font-size:12.5px;color:var(--ink-dim);cursor:pointer;transition:.13s;font:inherit}
   .navchip:hover{border-color:var(--ember);color:var(--ink);transform:translateY(-1px)}
   .navchip:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
@@ -303,7 +307,6 @@
   .hbar{margin-top:8px;height:4px;border-radius:99px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden;max-width:230px}
   .hbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ember),var(--ember-soft))}
   .block.done .hbar i{background:linear-gradient(90deg,var(--ok),#7FE3C0)}
-  .items li.crit{border-left:2px solid var(--alert);margin-left:-2px;padding-left:10px;border-radius:2px}
   .items li .right{flex:none;display:flex;align-items:center;gap:8px;margin-top:2px}
 </style>
 </head>
@@ -360,7 +363,10 @@
 
 <!-- ============ CHECKLIST ============ -->
 <div id="viewCheck">
-  <nav class="secnav" id="nav" aria-label="Ir para a seção"></nav>
+  <div class="secnav">
+    <span class="secnav-lbl">Atalhos</span>
+    <div class="secnav-row" id="nav" aria-label="Atalhos para as seções"></div>
+  </div>
   <div class="tools">
     <button id="fPend">Mostrar só pendentes</button>
     <button id="collapse">Recolher tudo</button>
@@ -666,7 +672,7 @@ function render(){
     blk.items.forEach((it,ii) => {
       const k = id(bi,ii), isDone = !!state[k];
       const li = document.createElement("li");
-      li.className = (isDone?"checked ":"") + (onlyPending&&isDone?"hidden ":"") + (it.tag==="critico"&&!isDone?"crit":"");
+      li.className = (isDone?"checked ":"") + (onlyPending&&isDone?"hidden":"");
       const tag   = it.tag ? `<span class="tag ${it.tag}">${it.tag==="continuo"?"contínuo":"crítico"}</span>` : "";
       const stamp = isDone ? `<span class="stamp">${state[k]}</span>` : "";
       li.innerHTML =
