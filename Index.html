@@ -251,6 +251,60 @@
     .block.collapsed .items,.block.collapsed .note{display:block}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* ===================== PROPOSTA VISUAL ===================== */
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* --- tema claro (opcional; padrão continua escuro) --- */
+  :root[data-tema="claro"]{
+    --bg:#EEF1F4; --bg-2:#FFFFFF; --panel:#FFFFFF; --line:#E1E6EB;
+    --ink:#1A2129; --ink-dim:#5A6B7A; --smoke:#8496A4;
+    --ember:#E8600B; --ember-soft:#B4530C; --alert:#B7791F; --ok:#1FA073;
+  }
+  :root[data-tema="claro"] input[type=checkbox]:checked::after{border-color:#fff}
+
+  /* --- cabeçalho: data + botão de tema --- */
+  .topright{display:flex;align-items:center;gap:12px}
+  .tema-btn{background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:15px;
+    line-height:1;cursor:pointer;color:var(--ink)}
+  .tema-btn:hover{border-color:var(--smoke)}
+
+  /* --- abas fixas + mini progresso --- */
+  .tabs{position:sticky;top:0;z-index:30;
+    background:color-mix(in srgb, var(--bg) 85%, transparent);backdrop-filter:blur(9px)}
+  .tabmini{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink-dim);font-weight:600}
+  .tabmini .lbl{letter-spacing:.04em}
+  .tabmini .track{width:120px;height:6px;border-radius:99px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden}
+  .tabmini .track i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ember),var(--alert));transition:width .35s ease}
+  .tabmini b{color:var(--ink)}
+  @media (max-width:560px){.tabmini{display:none}}
+
+  /* --- navegação por seção (chips) --- */
+  .secnav{display:flex;gap:8px;flex-wrap:wrap;padding:18px 0 4px}
+  .navchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg-2);
+    border-radius:99px;padding:6px 12px 6px 9px;font-size:12.5px;color:var(--ink-dim);cursor:pointer;transition:.13s;font:inherit}
+  .navchip:hover{border-color:var(--ember);color:var(--ink);transform:translateY(-1px)}
+  .navchip:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+  .navchip .dot{width:8px;height:8px;border-radius:50%;background:var(--smoke);flex:none}
+  .navchip.part .dot{background:var(--ember)}
+  .navchip.done .dot{background:var(--ok)}
+  .navchip .nseq{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .navchip .nm{font-weight:600}
+  .navchip .c{color:var(--smoke);font-weight:700;font-variant-numeric:tabular-nums}
+  .navchip.done{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+  .navchip.done .c{color:var(--ok)}
+
+  /* --- blocos refinados --- */
+  .block{scroll-margin-top:70px;transition:box-shadow .3s}
+  .block.flash{box-shadow:0 0 0 2px var(--ember)}
+  .head:hover{background:color-mix(in srgb, var(--ember) 9%, transparent)}
+  .head .htext{flex:1;min-width:0}
+  .head .htext h2{flex:none}
+  .hbar{margin-top:8px;height:4px;border-radius:99px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden;max-width:230px}
+  .hbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ember),var(--ember-soft))}
+  .block.done .hbar i{background:linear-gradient(90deg,var(--ok),#7FE3C0)}
+  .items li.crit{border-left:2px solid var(--alert);margin-left:-2px;padding-left:10px;border-radius:2px}
+  .items li .right{flex:none;display:flex;align-items:center;gap:8px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -259,7 +313,10 @@
 <header>
   <div class="topline">
     <p class="eyebrow">CBMMG · CEB · Sala Coordenação CICC · FTP 2026</p>
-    <p class="hoje" id="hoje"></p>
+    <div class="topright">
+      <p class="hoje" id="hoje"></p>
+      <button id="temaBtn" class="tema-btn" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">🌙</button>
+    </div>
   </div>
   <h1>Plantão da Sala de Coordenação
     <span>Checklist da rotina + gerador do relatório de serviço para o SEI</span>
@@ -293,19 +350,17 @@
     </div>
   </div>
 
-  <div class="meter" style="margin-top:20px">
-    <div class="bar" id="bar"><i></i></div>
-    <b><em id="pdone">0</em>/<span id="ptotal">0</span> tarefas</b>
-  </div>
 </header>
 
 <div class="tabs">
   <button id="tabCheck" class="on">Checklist</button>
   <button id="tabRel">Relatório do serviço</button>
+  <span class="tabmini"><span class="lbl">Progresso</span> <span class="track"><i id="miniFill"></i></span> <b id="miniPct" class="tnum">0%</b></span>
 </div>
 
 <!-- ============ CHECKLIST ============ -->
 <div id="viewCheck">
+  <nav class="secnav" id="nav" aria-label="Ir para a seção"></nav>
   <div class="tools">
     <button id="fPend">Mostrar só pendentes</button>
     <button id="collapse">Recolher tudo</button>
@@ -470,7 +525,7 @@
 /* ===================== CHECKLIST ===================== */
 const DATA = [
   {
-    n:"01", t:"Montar a estação de trabalho", sub:"Manter tudo aberto o turno inteiro",
+    n:"01", curto:"Estação", t:"Montar a estação de trabalho", sub:"Manter tudo aberto o turno inteiro",
     items:[
       {x:"Painel Geofogo aberto"},
       {x:"Planilha de Operações FTP 2026 aberta", d:"<a href='https://docs.google.com/spreadsheets/u/0/d/1Q1NUmdX1WaEmsORVnlNvNdvMKJpDTYKdYVGUkSRNK-A/edit' target='_blank' rel='noopener'>Abrir planilha</a> — acesso apenas como leitor."},
@@ -483,7 +538,7 @@ const DATA = [
     note:"No CAD você apenas acompanha o andamento. Se alguma ocorrência não tiver sido relatada na Sala de Coordenação, <b>informe o ponto focal COB</b>."
   },
   {
-    n:"02", t:"Retomada do dia anterior", sub:"Antes de assumir o fluxo",
+    n:"02", curto:"Retomada", t:"Retomada do dia anterior", sub:"Antes de assumir o fluxo",
     items:[
       {x:"Conferir as ocorrências no Geofogo", d:"Gestão Operacional → filtrar por data."},
       {x:"Conferir o Relatório de Serviço no SEI", d:"Acompanhamento Especial → CMA – Núcleo de Operações → Relatório de Serviço Sala de Coordenação 2026."},
@@ -492,7 +547,31 @@ const DATA = [
     ]
   },
   {
-    n:"03", t:"Alimentação", sub:"Geofogo → Logística",
+    n:"03", curto:"Focos", t:"Focos de calor", sub:"Geofogo → Status meteorológico",
+    items:[
+      {x:"Monitorar constantemente os focos de calor via satélite", tag:"continuo"},
+      {x:"A cada novo foco: certificar-se de que a unidade/fração está ciente, pelo ponto focal COB", tag:"critico"},
+      {x:"Registrar no relatório do SEI que foi dada a ciência", tag:"critico"},
+      {x:"Enviar print e coordenadas convertidas no grupo “Sala de Coordenação” pedindo verificação in loco", tag:"critico"},
+      {x:"Registrar a resposta recebida da verificação in loco"},
+      {x:"Conferir no CAD a classificação do incêndio", d:"<code>04.001</code> incêndio em U.C. · <code>04.002</code> entorno de U.C."},
+      {x:"Acompanhar previsão do tempo e monitoramento meteorológico", tag:"continuo"}
+    ]
+  },
+  {
+    n:"04", curto:"Anúncios", t:"Anúncios e RI's", sub:"Brigadistas por volta das 09:00",
+    items:[
+      {x:"Conferir o anúncio diário dos brigadistas contratados no Geofogo", tag:"critico"},
+      {x:"Conferir o anúncio diário das Bases Avançadas no Geofogo", tag:"critico"},
+      {x:"Não havendo anúncio, acionar o ponto focal COB ou o brigadista mais experiente"},
+      {x:"Conferir o anúncio padrão do incêndio no grupo dos operadores e acusar recebimento com “joia”", tag:"critico"},
+      {x:"Copiar, filtrar e enviar o anúncio padrão no grupo “Incêndios Florestais IEF e CBMMG”", d:"Usar o termo <b>brigadista FTP</b> ou <b>brigadista AMDA</b>.", tag:"critico"},
+      {x:"Monitorar os RI's da Sala de Situação e procurar os REDS relacionados", tag:"continuo"},
+      {x:"Conferir o preenchimento do formulário de operações", d:"Aba Gestão Operacional do painel Geofogo.", tag:"critico"}
+    ]
+  },
+  {
+    n:"05", curto:"Alimentação", t:"Alimentação", sub:"Geofogo → Logística",
     items:[
       {x:"Conferir as solicitações em Geofogo → Logística", tag:"continuo"},
       {x:"Verificar no Telegram se a mensagem por script chegou", d:"Sem a mensagem, o pedido não chegou à fornecedora.", tag:"critico"},
@@ -509,7 +588,7 @@ const DATA = [
     ]
   },
   {
-    n:"04", t:"Aeronaves", sub:"Empenhos às 06:00",
+    n:"06", curto:"Aeronaves", t:"Aeronaves", sub:"Empenhos às 06:00",
     items:[
       {x:"Verificar a previsão de empenho de aeronaves do dia", tag:"critico"},
       {x:"Exigir o preenchimento do link antes de qualquer solicitação"},
@@ -522,31 +601,7 @@ const DATA = [
     ]
   },
   {
-    n:"05", t:"Focos de calor", sub:"Geofogo → Status meteorológico",
-    items:[
-      {x:"Monitorar constantemente os focos de calor via satélite", tag:"continuo"},
-      {x:"A cada novo foco: certificar-se de que a unidade/fração está ciente, pelo ponto focal COB", tag:"critico"},
-      {x:"Registrar no relatório do SEI que foi dada a ciência", tag:"critico"},
-      {x:"Enviar print e coordenadas convertidas no grupo “Sala de Coordenação” pedindo verificação in loco", tag:"critico"},
-      {x:"Registrar a resposta recebida da verificação in loco"},
-      {x:"Conferir no CAD a classificação do incêndio", d:"<code>04.001</code> incêndio em U.C. · <code>04.002</code> entorno de U.C."},
-      {x:"Acompanhar previsão do tempo e monitoramento meteorológico", tag:"continuo"}
-    ]
-  },
-  {
-    n:"06", t:"Anúncios e RI's", sub:"Brigadistas por volta das 09:00",
-    items:[
-      {x:"Conferir o anúncio diário dos brigadistas contratados no Geofogo", tag:"critico"},
-      {x:"Conferir o anúncio diário das Bases Avançadas no Geofogo", tag:"critico"},
-      {x:"Não havendo anúncio, acionar o ponto focal COB ou o brigadista mais experiente"},
-      {x:"Conferir o anúncio padrão do incêndio no grupo dos operadores e acusar recebimento com “joia”", tag:"critico"},
-      {x:"Copiar, filtrar e enviar o anúncio padrão no grupo “Incêndios Florestais IEF e CBMMG”", d:"Usar o termo <b>brigadista FTP</b> ou <b>brigadista AMDA</b>.", tag:"critico"},
-      {x:"Monitorar os RI's da Sala de Situação e procurar os REDS relacionados", tag:"continuo"},
-      {x:"Conferir o preenchimento do formulário de operações", d:"Aba Gestão Operacional do painel Geofogo.", tag:"critico"}
-    ]
-  },
-  {
-    n:"07", t:"Fechamento e registro", sub:"Boletim, SEI e passagem de serviço",
+    n:"07", curto:"Fechamento", t:"Fechamento e registro", sub:"Boletim, SEI e passagem de serviço",
     items:[
       {x:"Emitir e salvar o boletim diário no Geofogo", d:"Botão de disquete no cabeçalho do painel.", tag:"critico"},
       {x:"Montar o relatório na aba “Relatório do serviço” e baixar o HTML", tag:"critico"},
@@ -560,7 +615,7 @@ const DATA = [
   }
 ];
 
-const KEY     = "plantao-sala-coordenacao-v5";
+const KEY     = "plantao-sala-coordenacao-v6";
 const KEY_REL = "plantao-relatorio-v5";
 let state = {}, collapsed = {}, onlyPending = false;
 /* ao abrir: só o bloco 01 expandido; os demais recolhidos */
@@ -579,9 +634,11 @@ function render(){
     const head = document.createElement("div");
     head.className = "head";
     head.setAttribute("role","button"); head.tabIndex = 0;
+    const pcBlk = ids.length ? Math.round(done/ids.length*100) : 0;
     head.innerHTML =
       `<div class="seq">${done===ids.length?"✓":blk.n}</div>
-       <h2>${blk.t}<small>${blk.sub}</small></h2>
+       <div class="htext"><h2>${blk.t}<small>${blk.sub}</small></h2>
+         <div class="hbar"><i style="width:${pcBlk}%"></i></div></div>
        <span class="count">${done}/${ids.length}</span>
        <span class="chev">▾</span>`;
     head.onclick    = () => { collapsed[bi] = !collapsed[bi]; render(); };
@@ -609,13 +666,13 @@ function render(){
     blk.items.forEach((it,ii) => {
       const k = id(bi,ii), isDone = !!state[k];
       const li = document.createElement("li");
-      li.className = (isDone?"checked ":"") + (onlyPending&&isDone?"hidden":"");
+      li.className = (isDone?"checked ":"") + (onlyPending&&isDone?"hidden ":"") + (it.tag==="critico"&&!isDone?"crit":"");
       const tag   = it.tag ? `<span class="tag ${it.tag}">${it.tag==="continuo"?"contínuo":"crítico"}</span>` : "";
       const stamp = isDone ? `<span class="stamp">${state[k]}</span>` : "";
       li.innerHTML =
         `<input type="checkbox" id="c-${k}" ${isDone?"checked":""}>
          <label class="txt" for="c-${k}"><strong>${it.x}</strong>${it.d?`<p>${it.d}</p>`:""}</label>
-         ${stamp||tag}`;
+         <span class="right">${stamp||tag}</span>`;
       li.querySelector("input").onchange = e => {
         if(e.target.checked)
           state[k] = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
@@ -639,11 +696,36 @@ function render(){
 function updateMeter(){
   const total = DATA.reduce((s,b) => s + b.items.length, 0);
   const done  = Object.keys(state).length;
-  document.getElementById("pdone").textContent  = done;
-  document.getElementById("ptotal").textContent = total;
-  const bar = document.getElementById("bar");
-  bar.querySelector("i").style.width = (done/total*100) + "%";
-  bar.classList.toggle("full", done===total);
+  const pc = total ? Math.round(done/total*100) : 0;
+  const mf = document.getElementById("miniFill"), mp = document.getElementById("miniPct");
+  if(mf) mf.style.width = pc + "%";
+  if(mp) mp.textContent = pc + "%";
+  renderNav();
+}
+
+/* navegação por seção: chips que abrem/rolam até o checklist correspondente */
+function renderNav(){
+  const nav = document.getElementById("nav");
+  if(!nav) return;
+  nav.innerHTML = DATA.map((blk,bi) => {
+    const total = blk.items.length;
+    const done  = blk.items.filter((_,ii) => state[id(bi,ii)]).length;
+    const full  = done===total, part = done>0 && !full;
+    const c = full ? "✓" : `<span class="c">${done}/${total}</span>`;
+    return `<button class="navchip ${full?"done":(part?"part":"")}" data-nav="${bi}">
+      <span class="dot"></span><span class="nseq">${blk.n}</span><span class="nm">${blk.curto}</span> ${c}</button>`;
+  }).join("");
+  nav.querySelectorAll("[data-nav]").forEach(b => b.onclick = () => navega(+b.dataset.nav));
+}
+function navega(bi){
+  collapsed[bi] = false;
+  render();
+  const blk = list.children[bi];
+  if(blk){
+    blk.scrollIntoView({behavior:"smooth", block:"start"});
+    blk.classList.add("flash");
+    setTimeout(() => blk.classList.remove("flash"), 1200);
+  }
 }
 
 /* armazenamento: localStorage no navegador; memória se indisponível */
@@ -1338,6 +1420,24 @@ function flash(msg){
   const f=$("#flash"); f.textContent=msg;
   setTimeout(()=>{ f.textContent=""; }, 1800);
 }
+
+/* tema claro/escuro — preferência do operador, salva no dispositivo */
+const TEMA_KEY = "plantao-tema-v1";
+function aplicaTema(t){
+  document.documentElement.setAttribute("data-tema", t);
+  const btn = document.getElementById("temaBtn");
+  if(btn){ btn.textContent = (t==="claro") ? "☀️" : "🌙"; }
+}
+(function initTema(){
+  let t = "escuro";
+  try{ t = Store.get(TEMA_KEY) || "escuro"; }catch(e){}
+  aplicaTema(t);
+  const btn = document.getElementById("temaBtn");
+  if(btn) btn.onclick = () => {
+    const novo = (document.documentElement.getAttribute("data-tema")==="claro") ? "escuro" : "claro";
+    aplicaTema(novo); Store.set(TEMA_KEY, novo);
+  };
+})();
 
 /* data atual no cabeçalho */
 (function mostraDataHoje(){
