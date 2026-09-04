@@ -416,7 +416,7 @@
     <div class="secnav-row" id="nav" aria-label="Atalhos para as seções"></div>
   </div>
   <div class="tools">
-    <button id="fPend">Mostrar só pendentes</button>
+    <button id="fPend">Mostrar pendentes</button>
     <button id="collapse">Recolher tudo</button>
     <span id="sync" class="flash"></span>
     <div class="spacer"></div>
@@ -841,7 +841,7 @@ async function load(){
 document.getElementById("fPend").onclick = e => {
   onlyPending = !onlyPending;
   e.target.classList.toggle("on", onlyPending);
-  e.target.textContent = onlyPending ? "Mostrar todas" : "Mostrar só pendentes";
+  e.target.textContent = onlyPending ? "Mostrar todas" : "Mostrar pendentes";
   render();
 };
 document.getElementById("collapse").onclick = e => {
