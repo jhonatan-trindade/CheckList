@@ -24,7 +24,12 @@
   .wrap{max-width:1200px;margin:0 auto;padding:28px 24px 90px}
 
   header{border-bottom:1px solid var(--line);padding-bottom:20px}
+  .topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
   .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);font-weight:700;margin:0 0 6px}
+  .hoje{margin:0 0 6px;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink-dim);
+    display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .hoje b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .hoje .dia{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember-soft);font-weight:700}
   h1{margin:0;font-size:30px;line-height:1.12;font-weight:700;letter-spacing:-.02em}
   h1 span{display:block;color:var(--ink-dim);font-size:15px;font-weight:400;letter-spacing:0;margin-top:6px}
   .meter{margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -262,7 +267,10 @@
 <div class="wrap">
 
 <header>
-  <p class="eyebrow">CBMMG · CEB · Sala Coordenação CICC · FTP 2026</p>
+  <div class="topline">
+    <p class="eyebrow">CBMMG · CEB · Sala Coordenação CICC · FTP 2026</p>
+    <p class="hoje" id="hoje"></p>
+  </div>
   <h1>Plantão da Sala de Coordenação
     <span>Checklist da rotina + gerador do relatório de serviço para o SEI</span>
   </h1>
@@ -385,9 +393,15 @@
   <div class="card">
     <h3>Assinatura</h3>
     <div class="grid g3">
-      <div><label class="f" for="sNome">Nome</label><input type="text" id="sNome" placeholder="Rafael Oliveira Bittencourt"></div>
+      <div><label class="f" for="sNome">Nome</label>
+        <select id="sNome"></select>
+        <input type="text" id="sNomeOutro" placeholder="Digite o nome" style="margin-top:8px" hidden>
+      </div>
       <div><label class="f" for="sPosto">Posto / graduação</label><select id="sPosto"></select></div>
-      <div><label class="f" for="sFuncao">Função</label><input type="text" id="sFuncao" placeholder="Coordenador da Sala Central"></div>
+      <div><label class="f" for="sFuncao">Função</label>
+        <select id="sFuncao"></select>
+        <input type="text" id="sFuncaoOutro" placeholder="Digite a função" style="margin-top:8px" hidden>
+      </div>
     </div>
   </div>
 
@@ -803,8 +817,23 @@ function buscaEfetivo(num){ return EFETIVO_CADASTRO[(num||"").replace(/\D/g,"")]
 const POSTOS_EXTENSO = [
   "Coronel BM","Tenente-Coronel BM","Major BM","Capitão BM","1º Tenente BM","2º Tenente BM",
   "Aspirante a Oficial BM","Subtenente BM","1º Sargento BM","2º Sargento BM","3º Sargento BM",
-  "Cabo BM","Soldado BM"
+  "Cabo BM","Soldado BM","Civil"
 ];
+/* posto abreviado (efetivo) -> por extenso (assinatura) */
+const POSTO_ABREV_EXTENSO = {
+  "Cel BM":"Coronel BM","Ten Cel BM":"Tenente-Coronel BM","Maj BM":"Major BM",
+  "Cap BM":"Capitão BM","1º Ten BM":"1º Tenente BM","2º Ten BM":"2º Tenente BM",
+  "Asp Of BM":"Aspirante a Oficial BM","Subten BM":"Subtenente BM",
+  "1º Sgt BM":"1º Sargento BM","2º Sgt BM":"2º Sargento BM","3º Sgt BM":"3º Sargento BM",
+  "Cb BM":"Cabo BM","Sd BM":"Soldado BM","Civil":"Civil"
+};
+/* nomes do efetivo cadastrado (para a lista de assinatura) + busca por nome */
+const NOMES_EFETIVO = Object.values(EFETIVO_CADASTRO).map(c => c.nome)
+  .sort((a,b) => a.localeCompare(b, "pt-BR"));
+const CAD_POR_NOME = {};
+Object.values(EFETIVO_CADASTRO).forEach(c => { CAD_POR_NOME[c.nome] = c; });
+/* funções fixas da assinatura (além de "Outros", que libera digitar) */
+const FUNCOES = ["Coordenador da Sala Central"];
 
 function fmtNumBM(v){
   const d = (v||"").replace(/\D/g,"").slice(0,7);
@@ -869,11 +898,35 @@ function renderRel(){
     sp.innerHTML = buildSelectOpts(POSTOS_EXTENSO, rel.sig.posto);
   else sp.value = rel.sig.posto;
 
+  /* lista de nomes cadastrados na assinatura (+ "Outros" para digitar) */
+  const sn = $("#sNome"), snO = $("#sNomeOutro");
+  if(sn.options.length <= 1)
+    sn.innerHTML = `<option value="">— selecione —</option>`
+      + selOpts(NOMES_EFETIVO, "") + `<option value="__outros">Outro (digitar)…</option>`;
+  if(NOMES_EFETIVO.includes(rel.sig.nome)){
+    sn.value = rel.sig.nome; snO.hidden = true;
+  } else if(rel.sig.nome){
+    sn.value = "__outros"; snO.hidden = false; snO.value = rel.sig.nome;
+  } else {
+    sn.value = ""; snO.hidden = true; snO.value = "";
+  }
+
+  /* função: select com opções fixas + "Outros" (libera digitar) */
+  const sf = $("#sFuncao"), sfO = $("#sFuncaoOutro");
+  if(sf.options.length <= 1)
+    sf.innerHTML = `<option value="">— selecione —</option>`
+      + selOpts(FUNCOES, "") + `<option value="__outros">Outros…</option>`;
+  if(FUNCOES.includes(rel.sig.funcao)){
+    sf.value = rel.sig.funcao; sfO.hidden = true;
+  } else if(rel.sig.funcao){
+    sf.value = "__outros"; sfO.hidden = false; sfO.value = rel.sig.funcao;
+  } else {
+    sf.value = ""; sfO.hidden = true; sfO.value = "";
+  }
+
   $("#rData").value = rel.data;
   $("#rRef").value  = rel.ref;
   $("#rAnexo").value= rel.anexo;
-  $("#sNome").value = rel.sig.nome;
-  $("#sFuncao").value=rel.sig.funcao;
 
   /* efetivo */
   const ef = $("#efetivoList"); ef.innerHTML = "";
@@ -1066,9 +1119,36 @@ $("#rData").onchange  = e => {
 };
 $("#rRef").oninput    = e => { rel.ref    = e.target.value; saveRel(); desenhaPreview(); };
 $("#rAnexo").oninput  = e => { rel.anexo  = e.target.value; saveRel(); desenhaPreview(); };
-$("#sNome").oninput   = e => { rel.sig.nome   = e.target.value; saveRel(); desenhaPreview(); };
+/* nome da assinatura: escolhe da lista (e puxa o posto) ou "Outro" para digitar */
+$("#sNome").onchange = e => {
+  const v = e.target.value, snO = $("#sNomeOutro");
+  if(v === "__outros"){
+    snO.hidden = false; rel.sig.nome = snO.value.trim(); snO.focus();
+  } else {
+    snO.hidden = true; rel.sig.nome = v;
+    const cad = CAD_POR_NOME[v];               /* ao escolher um cadastrado, já puxa o posto */
+    if(cad && cad.posto){
+      rel.sig.posto = POSTO_ABREV_EXTENSO[cad.posto] || rel.sig.posto;
+      $("#sPosto").value = rel.sig.posto;
+    }
+  }
+  saveRel(); desenhaPreview();
+};
+$("#sNomeOutro").oninput = e => { rel.sig.nome = e.target.value; saveRel(); desenhaPreview(); };
+
 $("#sPosto").onchange = e => { rel.sig.posto  = e.target.value; saveRel(); desenhaPreview(); };
-$("#sFuncao").oninput = e => { rel.sig.funcao = e.target.value; saveRel(); desenhaPreview(); };
+
+/* função da assinatura: opções fixas ou "Outros" para digitar */
+$("#sFuncao").onchange = e => {
+  const v = e.target.value, sfO = $("#sFuncaoOutro");
+  if(v === "__outros"){
+    sfO.hidden = false; rel.sig.funcao = sfO.value.trim(); sfO.focus();
+  } else {
+    sfO.hidden = true; rel.sig.funcao = v;
+  }
+  saveRel(); desenhaPreview();
+};
+$("#sFuncaoOutro").oninput = e => { rel.sig.funcao = e.target.value; saveRel(); desenhaPreview(); };
 
 /* ---- botões ---- */
 $("#addEfetivo").onclick = () => { rel.efetivo.push({n:"",p:"",nome:""}); saveRel(); renderRel(); };
@@ -1259,6 +1339,16 @@ function flash(msg){
   const f=$("#flash"); f.textContent=msg;
   setTimeout(()=>{ f.textContent=""; }, 1800);
 }
+
+/* data atual no cabeçalho */
+(function mostraDataHoje(){
+  const h  = new Date();
+  const dd = String(h.getDate()).padStart(2,"0");
+  const mm = String(h.getMonth()+1).padStart(2,"0");
+  const iso = `${h.getFullYear()}-${mm}-${dd}`;
+  const el = document.getElementById("hoje");
+  if(el) el.innerHTML = `📅 <b>${fmtData(iso)}</b> <span class="dia">${diaSemana(iso)}</span>`;
+})();
 
 load();
 loadRel();
