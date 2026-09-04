@@ -6,9 +6,10 @@
 <title>Plantão — Sala de Coordenação Operacional CEB</title>
 <style>
   :root{
-    --bg:#0E1216; --bg-2:#151B21; --panel:#1A222A; --line:#27313B;
+    --bg:#0E1216; --bg-2:#151B21; --panel:#1A222A; --line:#27313B; --line-2:#334150;
     --ink:#E8EDF2; --ink-dim:#8B9AA8; --ember:#FF7A18; --ember-soft:#FFA357;
     --alert:#FFC93C; --ok:#3FBF8F; --smoke:#5A6B7A;
+    --shadow:0 1px 0 rgba(255,255,255,.03), 0 6px 20px -14px rgba(0,0,0,.65);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -133,8 +134,8 @@
   .card > h3{margin:0 0 14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
   label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin:0 0 5px;font-weight:600}
   input[type=text],input[type=date],select,textarea{
-    width:100%;max-width:100%;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--bg-2);
-    border:1px solid var(--line);border-radius:6px;padding:9px 11px
+    width:100%;max-width:100%;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line-2);border-radius:6px;padding:9px 11px
   }
   textarea{resize:vertical;min-height:70px;line-height:1.45}
   .grid{display:grid;gap:12px}
@@ -257,10 +258,18 @@
 
   /* --- tema claro (opcional; padrão continua escuro) --- */
   :root[data-tema="claro"]{
-    --bg:#EEF1F4; --bg-2:#FFFFFF; --panel:#FFFFFF; --line:#E1E6EB;
-    --ink:#1A2129; --ink-dim:#5A6B7A; --smoke:#8496A4;
-    --ember:#E8600B; --ember-soft:#B4530C; --alert:#B7791F; --ok:#1FA073;
+    --bg:#E6EAF0; --bg-2:#F1F4F8; --panel:#FFFFFF; --line:#D4DBE4; --line-2:#C2CBD6;
+    --ink:#1B2330; --ink-dim:#54637A; --smoke:#7C8B9C;
+    --ember:#DD5F0C; --ember-soft:#B14E09; --alert:#A9781C; --ok:#1B9C6E;
+    --shadow:0 1px 2px rgba(20,30,45,.05), 0 10px 26px -18px rgba(20,30,45,.22);
   }
+  /* modo claro: sombra suave nos cards dá profundidade (tira o aspecto estourado) */
+  :root[data-tema="claro"] .block,
+  :root[data-tema="claro"] .card,
+  :root[data-tema="claro"] .prazos-group,
+  :root[data-tema="claro"] .fixed,
+  :root[data-tema="claro"] .tema-btn,
+  :root[data-tema="claro"] .tools button{box-shadow:var(--shadow)}
   :root[data-tema="claro"] input[type=checkbox]:checked::after{border-color:#fff}
 
   /* --- cabeçalho: data + botão de tema --- */
@@ -283,8 +292,8 @@
   .secnav{display:flex;align-items:flex-start;gap:11px;padding:18px 0 4px;flex-wrap:wrap}
   .secnav-lbl{flex:none;margin-top:6px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);font-weight:800}
   .secnav-row{flex:1;min-width:0;display:flex;gap:7px;flex-wrap:wrap}
-  .navchip{flex:none;white-space:nowrap;display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--bg-2);
-    border-radius:99px;padding:5px 11px 5px 8px;font-size:12px;color:var(--ink-dim);cursor:pointer;transition:.13s;font:inherit}
+  .navchip{flex:none;white-space:nowrap;display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);
+    border-radius:99px;padding:5px 11px 5px 8px;font-size:12px;color:var(--ink-dim);cursor:pointer;transition:.13s;font:inherit;box-shadow:var(--shadow)}
   .navchip:hover{border-color:var(--ember);color:var(--ink);transform:translateY(-1px)}
   .navchip:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
   .navchip .dot{width:8px;height:8px;border-radius:50%;background:var(--smoke);flex:none}
