@@ -45,11 +45,37 @@ Para atualizar depois de mudar o código: **Implantar → Gerenciar implantaçõ
 Ao abrir a planilha, aparece o menu **“Plantão CEB → Abrir checklist”**, que abre
 a aplicação em uma janela dentro da planilha. Útil para testar antes de publicar.
 
+## Salvamento na planilha (um plantão por dia)
+
+Quando a página é servida pelo Apps Script (Web App ou o diálogo do menu), o
+checklist **e** o relatório são salvos automaticamente na planilha, em uma aba
+chamada **`Plantões`**, com **uma linha por Data do serviço**:
+
+| Data do serviço | Atualizado em | Dados (JSON) |
+|-----------------|---------------|--------------|
+
+- A aba é criada sozinha no primeiro salvamento.
+- O salvamento é automático (com um pequeno atraso após cada alteração). O status
+  aparece na barra do checklist: *Salvando… / Salvo na planilha ✓*.
+- Ao abrir, a página carrega o plantão **do dia atual** (Data do serviço), se já existir.
+- **Novo plantão** limpa as marcações do dia — como cada dia é um plantão, isso
+  registra o encerramento e o início de um novo.
+- Sem Apps Script (preview/arquivo) ou sem rede, tudo continua funcionando pelo
+  `localStorage` do dispositivo; assim que houver conexão, volta a salvar na planilha.
+
+**Autorização (primeira vez):** no editor do Apps Script, rode a função
+`testePlantao` uma vez (menu **Executar**) e conceda as permissões — isso libera o
+acesso à planilha e cria/valida a aba `Plantões`. Depois **republique** o Web App
+(*Implantar → Gerenciar implantações → Nova versão*).
+
+## Efetivo cadastrado (auto-preenchimento pelo Número BM)
+
+O efetivo da Sala de Situação já vem cadastrado no `Index.html` (constante
+`EFETIVO_CADASTRO`). No relatório, ao digitar o **Número BM** de um militar, o
+**nome** (e o **posto**, quando conhecido) são preenchidos automaticamente. Para
+incluir/alterar pessoas, edite essa constante (a chave é o número só com dígitos).
+
 ## Observações
 
-- O progresso do checklist e os dados do relatório ficam salvos no **navegador do
-  dispositivo** (`localStorage`), como no HTML original. Cada dispositivo mantém o
-  seu próprio andamento; “Novo plantão” limpa as marcações.
 - O relatório do SEI continua sendo gerado no próprio navegador (botões **Baixar
-  HTML do SEI** e **Copiar código**). A planilha serve apenas como container do
-  projeto Apps Script.
+  HTML do SEI** e **Copiar código**).

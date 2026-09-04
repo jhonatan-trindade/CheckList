@@ -301,6 +301,7 @@
   <div class="tools">
     <button id="fPend">Mostrar só pendentes</button>
     <button id="collapse">Recolher tudo</button>
+    <span id="sync" class="flash"></span>
     <div class="spacer"></div>
     <button id="print">Imprimir</button>
     <button id="reset" class="danger">Novo plantão</button>
@@ -640,7 +641,57 @@ const Store = (() => {
   };
 })();
 
-async function save(){ Store.set(KEY, JSON.stringify(state)); }
+/* ---------- sincronização com a planilha (Google Apps Script) ----------
+   Roda no navegador como cache instantâneo (localStorage) e, quando a
+   página é servida pelo Apps Script, também salva na planilha por dia de
+   serviço. Fora do Apps Script (preview/arquivo) usa só o localStorage. */
+const NO_SERVIDOR = (typeof google !== "undefined" && google.script && google.script.run);
+
+function servidor(fn, ...args){
+  return new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](...args);
+  });
+}
+
+function statusSync(msg, persistente){
+  const s = document.getElementById("sync");
+  if(!s) return;
+  s.textContent = msg;
+  clearTimeout(s._t);
+  if(!persistente) s._t = setTimeout(() => { s.textContent = ""; }, 2600);
+}
+
+let _syncTimer = null;
+function agendarSync(){
+  if(!NO_SERVIDOR) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    if(!rel.data) return;
+    statusSync("Salvando…", true);
+    const payload = JSON.stringify({ state, rel });
+    servidor("salvarPlantao", rel.data, payload)
+      .then(r => statusSync(r && r.ok ? "Salvo na planilha ✓" : "Falha ao salvar na planilha", !(r && r.ok)))
+      .catch(() => statusSync("Sem conexão com a planilha (salvo neste dispositivo)", true));
+  }, 900);
+}
+
+/* carrega da planilha o plantão do dia atual (se existir) e aplica */
+async function carregarInicialServidor(){
+  if(!NO_SERVIDOR) return;
+  try{
+    const raw = await servidor("carregarPlantao", rel.data);
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p.state && typeof p.state === "object") state = p.state;
+      if(p.rel   && typeof p.rel   === "object") rel   = Object.assign(rel, p.rel);
+      posLoadRel();
+      render(); renderRel();
+      statusSync("Carregado da planilha ✓");
+    }
+  }catch(e){ statusSync("Sem conexão com a planilha (usando este dispositivo)", true); }
+}
+
+async function save(){ Store.set(KEY, JSON.stringify(state)); agendarSync(); }
 async function load(){
   try{ const r = Store.get(KEY); if(r) state = JSON.parse(r); }
   catch(e){ state = {}; }
@@ -709,8 +760,36 @@ const TIPO_ID = ["REDS","Nº Chamada"];
 
 const POSTOS = [
   "Cel BM","Ten Cel BM","Maj BM","Cap BM","1º Ten BM","2º Ten BM","Asp Of BM",
-  "Subten BM","1º Sgt BM","2º Sgt BM","3º Sgt BM","Cb BM","Sd BM"
+  "Subten BM","1º Sgt BM","2º Sgt BM","3º Sgt BM","Cb BM","Sd BM","Civil"
 ];
+
+/* ---- efetivo cadastrado da Sala de Situação ----
+   Ao digitar o Número BM, o nome (e o posto, quando conhecido) são puxados.
+   Chave = só os dígitos do número. Ajuste/complete aqui conforme necessário. */
+const EFETIVO_CADASTRO = {
+  "1361435": { nome:"Lucas Alves Pacheco",            posto:"Maj BM" },
+  "1364181": { nome:"Eduardo Rodrigo Simoes",         posto:"Maj BM" },
+  "0827436": { nome:"Cleber Ribeiro De Carvalho",     posto:"Cap BM" },
+  "1317999": { nome:"Farley Michel Antunes Silveira", posto:"Maj BM" },
+  "1430933": { nome:"Warley de Paula Vieira",         posto:"Cap BM" },
+  "1656255": { nome:"Roberto Elizio Cardoso Chaves",  posto:"Cb BM"  },
+  "1480797": { nome:"Phillipe Ralph Solano F Dos",    posto:"Cap BM" },
+  "1548288": { nome:"Mariana Romualdo Pais",          posto:"3º Sgt BM" },
+  "1674951": { nome:"Sandro Aloísio Matilde Júnior",  posto:"1º Ten BM" },
+  "1638337": { nome:"Mateus Henrique Correa Pereira", posto:"3º Sgt BM" },
+  "1725993": { nome:"Andressa Freire dos Santos",     posto:"2º Ten BM" },
+  "1360783": { nome:"Samuel Henrique Maciel",         posto:"" },        /* roster: "SGT" (grau não especificado) */
+  "1728161": { nome:"Edgar Filgueira Rocha",          posto:"Cb BM"  },
+  "1590850": { nome:"Leandro Figueiredo Gomes",       posto:"Cap BM" },
+  "1644145": { nome:"Marcus Vinicius De Miranda",     posto:"3º Sgt BM" },
+  "1645050": { nome:"Jhonatan Trindade Rosa Lopes",   posto:"3º Sgt BM" },
+  "1583285": { nome:"Ricardo Alves Barbosa",          posto:"Cap BM" },
+  "1554773": { nome:"Warley Henrique Duarte De",      posto:"3º Sgt BM" },
+  "145851":  { nome:"Joyce Faria de Carvalho Alves",  posto:"Civil"  },
+  "145673":  { nome:"Gustavo Rodrigues Souza",        posto:"Civil"  },
+  "1823053": { nome:"Luiz Henrique Nunes de Oliveira",posto:"Sd BM"  }
+};
+function buscaEfetivo(num){ return EFETIVO_CADASTRO[(num||"").replace(/\D/g,"")] || null; }
 const POSTOS_EXTENSO = [
   "Coronel BM","Tenente-Coronel BM","Major BM","Capitão BM","1º Tenente BM","2º Tenente BM",
   "Aspirante a Oficial BM","Subtenente BM","1º Sargento BM","2º Sargento BM","3º Sargento BM",
@@ -735,16 +814,19 @@ const $ = s => document.querySelector(s);
 const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const lim = s => (s||"").trim().replace(/\s*\n\s*/g," ");
 
-async function saveRel(){ Store.set(KEY_REL, JSON.stringify(rel)); }
+async function saveRel(){ Store.set(KEY_REL, JSON.stringify(rel)); agendarSync(); }
 async function loadRel(){
   try{
     const r = Store.get(KEY_REL);
-    if(r){
-      const v = JSON.parse(r);
-      rel = Object.assign(rel, v);
-      ACOES_PADRAO.forEach(a => { if(!rel.acoes.some(x=>x.t===a)) rel.acoes.push({t:a,on:false}); });
-    }
+    if(r) rel = Object.assign(rel, JSON.parse(r));
   }catch(e){}
+  posLoadRel();
+  renderRel();
+}
+
+/* ajustes aplicados sempre que o relatório é carregado (localStorage ou planilha) */
+function posLoadRel(){
+  ACOES_PADRAO.forEach(a => { if(!rel.acoes.some(x=>x.t===a)) rel.acoes.push({t:a,on:false}); });
   /* normaliza as ocorrências para o formato guiado (mantém dados antigos) */
   rel.ocorr = (rel.ocorr||[]).map(o => {
     const base = {
@@ -760,7 +842,6 @@ async function loadRel(){
   });
   if(!rel.data)  rel.data  = new Date().toISOString().slice(0,10);
   if(!rel.anexo) rel.anexo = "Boletim Diário do dia " + fmtData(rel.data);
-  renderRel();
 }
 
 function buildSelectOpts(arr, val, placeholder){
@@ -820,7 +901,18 @@ function renderRel(){
           e.target.value = novo;
           const delta = novo.length - antes;
           try{ e.target.setSelectionRange(pos+delta, pos+delta); }catch(_){}
-          rel.efetivo[i].n = novo; saveRel(); desenhaPreview();
+          rel.efetivo[i].n = novo;
+          /* puxa nome e posto do efetivo cadastrado, se o número bater */
+          const cad = buscaEfetivo(novo);
+          if(cad){
+            rel.efetivo[i].nome = cad.nome;
+            if(cad.posto) rel.efetivo[i].p = cad.posto;
+            const nomeInp  = d.querySelector('[data-ef="nome"]');
+            const postoSel = d.querySelector('[data-ef="p"]');
+            if(nomeInp)  nomeInp.value  = cad.nome;
+            if(postoSel && cad.posto) postoSel.value = cad.posto;
+          }
+          saveRel(); desenhaPreview();
         };
       } else {
         inp.oninput = e => { rel.efetivo[i][campo] = e.target.value; saveRel(); desenhaPreview(); };
@@ -1160,6 +1252,7 @@ function flash(msg){
 
 load();
 loadRel();
+carregarInicialServidor();
 </script>
 </body>
 </html>
