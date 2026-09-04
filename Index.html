@@ -1180,6 +1180,13 @@ const P_CTR = 'style="text-align:center; margin-top:8px; margin-right:8px; margi
 const P_JUS = 'style="text-align:justify; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
 const P_ESQ = 'style="text-align:left; margin-top:8px; margin-right:8px; margin-bottom:8px; margin-left:8px"';
 
+/* títulos com fundo cinza e fonte Calibri, no padrão do SEI:
+   cabeçalho = cinza claro (#e6e6e6); seções (Nível 1) = cinza (#c5c5c5) */
+const CINZA_CAB  = 'font-family:Calibri; text-transform:uppercase; font-weight:bold; background-color:#e6e6e6';
+const CINZA_NIV1 = 'font-family:Calibri; text-transform:uppercase; font-weight:bold; background-color:#c5c5c5';
+function tituloCab(txt){ return `<p ${P_CTR}><span style="${CINZA_CAB}">${esc(txt)}</span></p>`; }
+function tituloN1(txt){  return `<p class="Item_Nivel1" ${P_JUS}><span style="${CINZA_NIV1}">${esc(txt)}</span></p>`; }
+
 function ddmm(iso){ if(!iso) return ""; const [a,m,d] = iso.split("-"); return d + "/" + m; }
 function cap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function deteccaoTxt(o){
@@ -1219,15 +1226,15 @@ function linhaOcorr(o){
 
 function montarHTML(){
   const L = [];
-  L.push(`<p ${P_CTR}><strong>COMANDO ESPECIALIZADO DE BOMBEIROS</strong></p>`);
-  L.push(`<p ${P_CTR}><strong>RELATÓRIO DE SERVIÇO DA SALA DE COORDENAÇÃO OPERACIONAL</strong></p>`);
-  L.push(`<p ${P_CTR}><strong>${esc(fmtData(rel.data))} - ${esc(diaSemana(rel.data))}</strong></p>`);
+  L.push(tituloCab("COMANDO ESPECIALIZADO DE BOMBEIROS"));
+  L.push(tituloCab("RELATÓRIO DE SERVIÇO DA SALA DE COORDENAÇÃO OPERACIONAL"));
+  L.push(tituloCab(fmtData(rel.data) + " - " + diaSemana(rel.data)));
   if(lim(rel.ref))
     L.push(`<p class="Texto_Alinhado_Esquerda" ${P_ESQ}><strong>Referência:</strong>&nbsp;${esc(lim(rel.ref))}</p>`);
 
   const efet = rel.efetivo.filter(m => lim(m.nome));
   if(efet.length){
-    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>EFETIVO</strong></p>`);
+    L.push(tituloN1("EFETIVO"));
     efet.forEach(m => {
       const txt = [lim(m.n)?"Nº "+esc(lim(m.n))+",":"", esc(lim(m.p)), esc(lim(m.nome))].filter(Boolean).join(" ");
       L.push(`<p class="Item_Nivel2" ${P_JUS}>${txt}</p>`);
@@ -1236,13 +1243,13 @@ function montarHTML(){
 
   const ocs = rel.ocorr.filter(o => lim(o.local)||lim(o.num)||lim(o.obs)||lim(o.coord));
   if(ocs.length){
-    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>OCORRÊNCIAS</strong></p>`);
+    L.push(tituloN1("OCORRÊNCIAS"));
     ocs.forEach(o => L.push(`<p class="Item_Nivel2" ${P_JUS}>${linhaOcorr(o)}</p>`));
   }
 
   const acs = rel.acoes.filter(a => a.on);
   if(acs.length){
-    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>AÇÕES DA SALA DE COORDENAÇÃO</strong></p>`);
+    L.push(tituloN1("AÇÕES DA SALA DE COORDENAÇÃO"));
     acs.forEach(a => {
       const t = lim(a.t).replace(/[;.]$/,"");
       L.push(`<p class="Item_Nivel2" ${P_JUS}>${esc(t)};</p>`);
@@ -1251,12 +1258,12 @@ function montarHTML(){
 
   const obs = rel.obs.filter(o => lim(o));
   if(obs.length){
-    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>OBSERVAÇÕES</strong></p>`);
+    L.push(tituloN1("OBSERVAÇÕES"));
     obs.forEach(o => L.push(`<p class="Item_Nivel2" ${P_JUS}>${esc(lim(o))}</p>`));
   }
 
   if(lim(rel.anexo)){
-    L.push(`<p class="Item_Nivel1" ${P_JUS}><strong>ANEXO</strong></p>`);
+    L.push(tituloN1("ANEXO"));
     L.push(`<p class="Item_Nivel2" ${P_JUS}>${esc(lim(rel.anexo))}</p>`);
   }
 
